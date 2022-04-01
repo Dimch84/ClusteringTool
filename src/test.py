@@ -59,7 +59,7 @@ def main():
     data4, ans4 = make_moons(n_samples=200, noise=0.1)
     iris = load_iris()
     data5, ans5 = (iris.data, iris.target)
-    data6 = load_from_csv('data/generated-data.csv', 7, normalise=True)
+    data6 = load_from_csv('../data/generated-data.csv', 7, normalise=True)
 
     data = [Dataset(data1, ans1), Dataset(data2, ans2), Dataset(data3, ans3),
             Dataset(data4, ans4), Dataset(data5, ans5), data6]
@@ -77,7 +77,7 @@ def main():
 
     plt.show()
 
-    save_to_csv('data/generated-data.csv', data[0])
+    save_to_csv('../data/generated-data.csv', data[0])
 
 
 if __name__ == "__main__":
