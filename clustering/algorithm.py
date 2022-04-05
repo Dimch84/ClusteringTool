@@ -1,5 +1,7 @@
 from collections.abc import Callable
 import numpy as np
+import os
+import importlib
 
 
 class Algorithm:
@@ -10,5 +12,15 @@ class Algorithm:
         self.name = name
         self.__run = run
 
-    def run(self, data: np.array, k: int = None):
+    # Can't pass Dataset here, because it may contain target
+    def run(self, data: np.array, k: int = None) -> np.array:
         return self.__run(data, k)
+
+
+def load_algorithms() -> [Algorithm]:
+    res = []
+    files = filter(lambda it: os.path.isfile('algorithms/' + it), os.listdir('algorithms'))
+    for file in files:
+        lib = importlib.import_module('clustering.algorithms.' + os.path.splitext(os.path.basename(file))[0])
+        res.extend(lib.algorithms)
+    return res
