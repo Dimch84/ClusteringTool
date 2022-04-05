@@ -39,8 +39,7 @@ def load_from_csv(file_name: str, num_of_classes: int, normalise: bool = False) 
     groups = {str(k): list(v) for k, v in groups.items()}
     numeric_cols = groups.get('int64', []) + groups.get('float64', [])
 
-    df = df[numeric_cols]
-    data = df.to_numpy()
+    data = df[numeric_cols].to_numpy()
     if normalise:
         data = preprocessing.MinMaxScaler().fit_transform(data)
 

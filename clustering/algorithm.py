@@ -22,5 +22,9 @@ def load_algorithms() -> [Algorithm]:
     files = filter(lambda it: os.path.isfile('algorithms/' + it), os.listdir('algorithms'))
     for file in files:
         lib = importlib.import_module('clustering.algorithms.' + os.path.splitext(os.path.basename(file))[0])
-        res.extend(lib.algorithms)
+        try:
+            res.extend(lib.algorithms)
+        except AttributeError:
+            print(f"Could not find algorithms variable in file {file}, skipping")
+
     return res
