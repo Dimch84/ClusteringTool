@@ -37,17 +37,17 @@ def load_from_csv(file_name: str, num_of_classes: int, normalise: bool = False) 
     df = pandas.read_csv(file_name)
     groups = df.columns.to_series().groupby(df.dtypes).groups
     groups = {str(k): list(v) for k, v in groups.items()}
-    num_cols = groups.get('int64', []) + groups.get('float64', [])
+    numeric_cols = groups.get('int64', []) + groups.get('float64', [])
 
-    df = df[num_cols]
-    df = df.to_numpy()
+    df = df[numeric_cols]
+    data = df.to_numpy()
     if normalise:
-        df = preprocessing.MinMaxScaler().fit_transform(df)
+        data = preprocessing.MinMaxScaler().fit_transform(data)
 
-    return Dataset(df, feature_names=num_cols, num_of_classes=num_of_classes,
+    return Dataset(data, feature_names=numeric_cols, num_of_classes=num_of_classes,
                    name=os.path.splitext(os.path.basename(file_name))[0])
 
 
-def save_to_csv(file_name: str, data: Dataset) -> None:
+def save_to_csv(file_name: str, data: Dataset):
     df = pandas.DataFrame(data=data.data, columns=data.feature_names)
     df.to_csv(file_name, index=False)
