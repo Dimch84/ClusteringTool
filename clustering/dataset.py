@@ -5,14 +5,27 @@ import os
 
 
 class Dataset:
-    data: np.array
-    target: np.array
+    """
+    This class is used to represent an instance of clustering problem
+
+    Attributes:
+        data: 2d-array of float with shape (n_samples, n_features),where n_samples is number of elements, and n_features is number of features.
+        target: expected partition into clusters (could be None)
+        num_of_classes: number of clusters to which data should be divided
+        feature_names: array with title for each feature
+        name: title for the dataset
+    """
+    data: np.ndarray
+    target: np.ndarray
     num_of_classes: int
-    feature_names: np.array
+    feature_names: np.ndarray
     name: str
 
-    def __init__(self, data: np.array, num_of_classes: int = None,
-                 target: np.array = None, feature_names: np.array = None, name: str = "Unnamed"):
+    def __init__(self, data: np.ndarray, num_of_classes: int = None,
+                 target: np.ndarray = None, feature_names: np.ndarray = None, name: str = "Unnamed"):
+        """
+        When function is called, at least one of (num_of_classes, target) should be specified (preferably, exactly one).
+        """
         self.data = data
         self.target = target
         self.num_of_classes = num_of_classes
@@ -25,7 +38,7 @@ class Dataset:
             self.num_of_classes = len(set(target))
 
         if feature_names is None:
-            feature_names = np.array([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
+            feature_names = np.ndarray([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
         self.feature_names = feature_names
 
     def __str__(self):
@@ -33,7 +46,12 @@ class Dataset:
                f"target = {self.target}\nnum_of_classes = {self.num_of_classes},\nname = {self.name}"
 
 
-def load_from_csv(file_name: str, num_of_classes: int, normalise: bool = False) -> Dataset:
+def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray = None, normalise: bool = False) -> Dataset:
+    """
+    Reads data from csv file. At least one of (target, num_of_classes) should be specified explicitly.
+
+    If normalise is set to True, for each feature values will be scaled to fit in [0, 1]
+    """
     df = pandas.read_csv(file_name)
     groups = df.columns.to_series().groupby(df.dtypes).groups
     groups = {str(k): list(v) for k, v in groups.items()}
@@ -43,7 +61,7 @@ def load_from_csv(file_name: str, num_of_classes: int, normalise: bool = False) 
     if normalise:
         data = preprocessing.MinMaxScaler().fit_transform(data)
 
-    return Dataset(data, feature_names=numeric_cols, num_of_classes=num_of_classes,
+    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=numeric_cols,
                    name=os.path.splitext(os.path.basename(file_name))[0])
 
 
