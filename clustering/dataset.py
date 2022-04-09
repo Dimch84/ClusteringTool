@@ -1,7 +1,8 @@
-import numpy as np
 from sklearn import preprocessing
+import numpy as np
 import pandas
 import os
+import json
 
 
 class Dataset:
@@ -68,3 +69,28 @@ def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray
 def save_to_csv(file_name: str, data: Dataset):
     df = pandas.DataFrame(data=data.data, columns=data.feature_names)
     df.to_csv(file_name, index=False)
+
+
+def serialize_dataset(dataset: Dataset) -> dict:
+    return {
+        'name': dataset.name,
+        'num_of_classes': dataset.num_of_classes,
+        'target': None if dataset.target is None else list(dataset.target)
+    }
+
+
+def deserialize_dataset(dataset: dict) -> Dataset:
+    name = dataset['name']
+    num_of_classes = dataset['num_of_classes']
+    target = None if dataset['target'] is None else np.array(dataset['target'])
+    return load_from_csv('datasets/' + name + '.csv', num_of_classes, target)
+
+
+def save_to_json(file_name: str, datasets: [Dataset]):
+    with open(file_name, "w") as json_file:
+        json.dump(list(map(serialize_dataset, datasets)), json_file, indent=4)
+
+
+def load_from_json(file_name: str) -> [Dataset]:
+    with open(file_name, "r") as json_file:
+        return list(map(deserialize_dataset, json.load(json_file)))
