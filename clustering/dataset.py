@@ -39,7 +39,7 @@ class Dataset:
             self.num_of_classes = len(set(target))
 
         if feature_names is None:
-            feature_names = np.ndarray([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
+            feature_names = np.array([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
         self.feature_names = feature_names
 
     def __str__(self):
@@ -47,7 +47,15 @@ class Dataset:
                f"target = {self.target}\nnum_of_classes = {self.num_of_classes},\nname = {self.name}"
 
 
-def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray = None, normalise: bool = False) -> Dataset:
+_json_file = os.path.join('datasets', 'datasets.json')
+
+
+def _dataset_filename(name: str) -> str:
+    return os.path.join('datasets', name + '.csv')
+
+
+def _load_from_csv(file_name: str, num_of_classes: int = None,
+                   target: np.ndarray = None, normalise: bool = False) -> Dataset:
     """
     Reads data from csv file. At least one of (target, num_of_classes) should be specified explicitly.
 
@@ -66,31 +74,60 @@ def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray
                    name=os.path.splitext(os.path.basename(file_name))[0])
 
 
-def save_to_csv(file_name: str, data: Dataset):
+def _save_to_csv(data: Dataset, file_name: str = None):
+    if file_name is None:
+        file_name = _dataset_filename(data.name)
     df = pandas.DataFrame(data=data.data, columns=data.feature_names)
     df.to_csv(file_name, index=False)
 
 
-def serialize_dataset(dataset: Dataset) -> dict:
+def _serialize_dataset(dataset: Dataset) -> dict:
     return {
         'name': dataset.name,
         'num_of_classes': dataset.num_of_classes,
-        'target': None if dataset.target is None else list(dataset.target)
+        'target': None if dataset.target is None else list(map(int, dataset.target))
     }
 
 
-def deserialize_dataset(dataset: dict) -> Dataset:
+def _deserialize_dataset(dataset: dict) -> Dataset:
     name = dataset['name']
     num_of_classes = dataset['num_of_classes']
     target = None if dataset['target'] is None else np.array(dataset['target'])
-    return load_from_csv('datasets/' + name + '.csv', num_of_classes, target)
+    return _load_from_csv(_dataset_filename(name), num_of_classes, target)
 
 
-def save_to_json(file_name: str, datasets: [Dataset]):
-    with open(file_name, "w") as json_file:
-        json.dump(list(map(serialize_dataset, datasets)), json_file, indent=4)
+def _write_to_json(datasets: [dict]):
+    with open(_json_file, 'w') as json_file:
+        json.dump(datasets, json_file)
 
 
-def load_from_json(file_name: str) -> [Dataset]:
-    with open(file_name, "r") as json_file:
-        return list(map(deserialize_dataset, json.load(json_file)))
+def _read_from_json() -> [dict]:
+    with open(_json_file, 'r') as json_file:
+        return json.load(json_file)
+
+
+def add_dataset(dataset: Dataset):
+    _save_to_csv(dataset)
+    dump = _read_from_json()
+    if dump is None:
+        dump = []
+    dump.append(_serialize_dataset(dataset))
+    _write_to_json(dump)
+
+
+def add_dataset_from_csv(file_name: str, num_of_classes: int = None,
+                         target: int = None, normalise: bool = True) -> Dataset:
+    dataset = _load_from_csv(file_name, num_of_classes, target, normalise)
+    add_dataset(dataset)
+    return dataset
+
+
+def delete_dataset(name: str):
+    dump = _read_from_json()
+    os.remove(_dataset_filename(name))
+    dump = list(filter(lambda d: d['name'] != name, dump))
+    _write_to_json(dump)
+
+
+def load_all_datasets() -> [Dataset]:
+    return list(map(_deserialize_dataset, _read_from_json()))
