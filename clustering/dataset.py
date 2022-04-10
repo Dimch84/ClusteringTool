@@ -107,6 +107,11 @@ def _read_from_json() -> [dict]:
 
 
 def add_dataset(dataset: Dataset):
+    """
+    This function should be used for datasets created by generators.
+    It creates a csv-file with dataset and record in json, so that this dataset will be included in
+    `load_all_datasets()` during the next launch.
+    """
     _save_to_csv(dataset)
     dump = _read_from_json()
     if dump is None:
@@ -117,12 +122,22 @@ def add_dataset(dataset: Dataset):
 
 def add_dataset_from_csv(file_name: str, num_of_classes: int = None,
                          target: int = None, normalise: bool = True) -> Dataset:
+    """
+    This function should be used for uploading datasets from third-party csv-files.
+    It creates a dataset, saves it in internal csv-file and makes record in json.
+    You should specify either `num_of_classes` or `target` for proper work.
+    :return: resulting dataset
+    """
     dataset = _load_from_csv(file_name, num_of_classes, target, normalise)
     add_dataset(dataset)
     return dataset
 
 
 def delete_dataset(name: str):
+    """
+    This function deletes dataset with specified name, so that it will not appear in `load_all_datasets()`
+    during next launch.
+    """
     dump = _read_from_json()
     os.remove(_dataset_filename(name))
     dump = list(filter(lambda d: d['name'] != name, dump))
@@ -130,4 +145,7 @@ def delete_dataset(name: str):
 
 
 def load_all_datasets() -> [Dataset]:
+    """
+    :return: list of all datasets, information about which is stored in json and corresponding csv-files.
+    """
     return list(map(_deserialize_dataset, _read_from_json()))
