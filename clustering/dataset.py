@@ -1,7 +1,8 @@
-import numpy as np
 from sklearn import preprocessing
+import numpy as np
 import pandas
 import os
+import json
 
 
 class Dataset:
@@ -38,7 +39,7 @@ class Dataset:
             self.num_of_classes = len(set(target))
 
         if feature_names is None:
-            feature_names = np.ndarray([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
+            feature_names = np.array([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
         self.feature_names = feature_names
 
     def __str__(self):
@@ -46,7 +47,15 @@ class Dataset:
                f"target = {self.target}\nnum_of_classes = {self.num_of_classes},\nname = {self.name}"
 
 
-def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray = None, normalise: bool = False) -> Dataset:
+_json_file = os.path.join('datasets', 'datasets.json')
+
+
+def _dataset_filename(name: str) -> str:
+    return os.path.join('datasets', name + '.csv')
+
+
+def _load_from_csv(file_name: str, num_of_classes: int = None,
+                   target: np.ndarray = None, normalise: bool = False) -> Dataset:
     """
     Reads data from csv file. At least one of (target, num_of_classes) should be specified explicitly.
 
@@ -65,6 +74,78 @@ def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray
                    name=os.path.splitext(os.path.basename(file_name))[0])
 
 
-def save_to_csv(file_name: str, data: Dataset):
+def _save_to_csv(data: Dataset, file_name: str = None):
+    if file_name is None:
+        file_name = _dataset_filename(data.name)
     df = pandas.DataFrame(data=data.data, columns=data.feature_names)
     df.to_csv(file_name, index=False)
+
+
+def _serialize_dataset(dataset: Dataset) -> dict:
+    return {
+        'name': dataset.name,
+        'num_of_classes': dataset.num_of_classes,
+        'target': None if dataset.target is None else list(map(int, dataset.target))
+    }
+
+
+def _deserialize_dataset(dataset: dict) -> Dataset:
+    name = dataset['name']
+    num_of_classes = dataset['num_of_classes']
+    target = None if dataset['target'] is None else np.array(dataset['target'])
+    return _load_from_csv(_dataset_filename(name), num_of_classes, target)
+
+
+def _write_to_json(datasets: [dict]):
+    with open(_json_file, 'w') as json_file:
+        json.dump(datasets, json_file)
+
+
+def _read_from_json() -> [dict]:
+    with open(_json_file, 'r') as json_file:
+        return json.load(json_file)
+
+
+def add_dataset(dataset: Dataset):
+    """
+    This function should be used for datasets created by generators.
+    It creates a csv-file with dataset and record in json, so that this dataset will be included in
+    `load_all_datasets()` during the next launch.
+    """
+    _save_to_csv(dataset)
+    dump = _read_from_json()
+    if dump is None:
+        dump = []
+    dump.append(_serialize_dataset(dataset))
+    _write_to_json(dump)
+
+
+def add_dataset_from_csv(file_name: str, num_of_classes: int = None,
+                         target: int = None, normalise: bool = True) -> Dataset:
+    """
+    This function should be used for uploading datasets from third-party csv-files.
+    It creates a dataset, saves it in internal csv-file and makes record in json.
+    You should specify either `num_of_classes` or `target` for proper work.
+    :return: resulting dataset
+    """
+    dataset = _load_from_csv(file_name, num_of_classes, target, normalise)
+    add_dataset(dataset)
+    return dataset
+
+
+def delete_dataset(name: str):
+    """
+    This function deletes dataset with specified name, so that it will not appear in `load_all_datasets()`
+    during next launch.
+    """
+    dump = _read_from_json()
+    os.remove(_dataset_filename(name))
+    dump = list(filter(lambda d: d['name'] != name, dump))
+    _write_to_json(dump)
+
+
+def load_all_datasets() -> [Dataset]:
+    """
+    :return: list of all datasets, information about which is stored in json and corresponding csv-files.
+    """
+    return list(map(_deserialize_dataset, _read_from_json()))
