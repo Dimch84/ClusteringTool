@@ -1,12 +1,12 @@
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QComboBox
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+from PyQt5.QtCore import QPointF, QRect
 from sklearn.decomposition import PCA
 import numpy as np
 import matplotlib
 
 from clustering.algorithm import Algorithm
 from clustering.dataset import load_all_datasets
+from clustering.gui.ClusteringView import ClusteringView
 
 
 matplotlib.use('Qt5Agg')
@@ -23,29 +23,30 @@ class AlgoResultsWidget(QWidget):
         super(AlgoResultsWidget, self).__init__(parent)
         layout = QGridLayout()
 
+        self.algo = algo
         self.datasets = {dataset.name: dataset for dataset in load_all_datasets()}
 
         self.create_selector()
         self.create_plot()
 
-        layout.addWidget(self.plot_widget, 0, 0, 2, 2)
+        layout.addWidget(self.plot_widget, 1, 0, 2, 2)
         layout.addWidget(self.dataset_selector, 0, 0)
 
         self.setLayout(layout)
 
     def create_plot(self):
-        fig = Figure(figsize=(100, 100), dpi=100)
-        self.plot = fig.add_subplot()
-        self.plot_widget = FigureCanvasQTAgg(fig)
-        self.redraw_plot()
+        dataset = self.datasets[self.current_dataset]
+        points = data_converse(dataset.data)
+        points = list(map(lambda point: QPointF(point[0], point[1]), points))
+
+        self.plot_widget = ClusteringView(points, list(self.algo.run(dataset.data, dataset.num_of_classes)))
+        self.plot_widget.setGeometry(QRect(100, 100, 600, 600))
+        self.setGeometry(QRect(0, 0, 900, 900))
 
     def redraw_plot(self):
-        # TODO: rewrite function so that it shows results of algorithm
-        self.plot.cla()  # Clear axes
-        dataset = self.datasets[self.current_dataset]
-        d = data_converse(dataset.data)
-        self.plot.scatter(d[:, 0], d[:, 1])
-        self.plot_widget.draw()
+        old_widget = self.plot_widget
+        self.create_plot()
+        self.layout().replaceWidget(old_widget, self.plot_widget)
 
     def change_current_dataset(self, dataset_name: str):
         self.current_dataset = dataset_name

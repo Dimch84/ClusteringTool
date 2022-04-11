@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QApplication, QLabel, QMainWindow
-from gui.AlgoResultsWidget import *
+from gui.AlgoResultsWidget import AlgoResultsWidget
 import sys
 
 import dataset
@@ -12,8 +12,4 @@ algos = algorithm.load_algorithms()
 app = QApplication([])
 tab = AlgoResultsWidget(algos[0])
 tab.show()
-
-
-for algo in algos:
-    print(algo.run(data.data, data.num_of_classes))
 sys.exit(app.exec())
