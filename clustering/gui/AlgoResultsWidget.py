@@ -2,14 +2,10 @@ from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QComboBo
 from PyQt5.QtCore import QPointF, QRect
 from sklearn.decomposition import PCA
 import numpy as np
-import matplotlib
 
 from clustering.algorithm import Algorithm
 from clustering.dataset import load_all_datasets
 from clustering.gui.ClusteringView import ClusteringView
-
-
-matplotlib.use('Qt5Agg')
 
 
 def data_converse(data: np.ndarray) -> np.ndarray:
@@ -40,7 +36,6 @@ class AlgoResultsWidget(QWidget):
         points = list(map(lambda point: QPointF(point[0], point[1]), points))
 
         self.plot_widget = ClusteringView(points, list(self.algo.run(dataset.data, dataset.num_of_classes)))
-        self.plot_widget.setGeometry(QRect(100, 100, 600, 600))
         self.setGeometry(QRect(0, 0, 900, 900))
 
     def redraw_plot(self):

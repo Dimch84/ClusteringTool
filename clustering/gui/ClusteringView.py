@@ -1,16 +1,39 @@
 import random
-from PyQt5.QtCore import Qt, QPointF, QRect
+from PyQt5.QtCore import Qt, QPointF, QRect, pyqtSignal
 from PyQt5.QtGui import QColor, QBrush, QPen
-from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem
+from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem, QSizePolicy
+from PyQt5.QtGui import QTransform
+
+
+class ScalableGraphicsView(QGraphicsView):
+    def __init__(self, scene, parent):
+        super().__init__(scene, parent)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.zoom = 1
+
+    def wheelEvent(self, event):
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        if event.angleDelta().y() > 0:
+            self.zoom = min(5.0, self.zoom * 1.12)
+        else:
+            self.zoom = max(0.2, self.zoom / 1.12)
+        self.updateView()
+
+    def updateView(self):
+        self.setTransform(QTransform().scale(self.zoom, self.zoom))
 
 
 class ClusteringView(QWidget):
+    zoom_signal = pyqtSignal(bool)
+
     def __init__(self, points: list[QPointF], target: list[int]):
         super().__init__()
         scene = QGraphicsScene()
         self.points = points
         self.target = target
-        self.graphicView = QGraphicsView(scene, self)
+        self.graphicView = ScalableGraphicsView(scene, self)
+        self.graphicView.setMinimumSize(800, 600)
         self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(target)))
         self.graphicView.setScene(self.__getSceneWithPoints())
         self.show()
@@ -34,12 +57,6 @@ class ClusteringView(QWidget):
         k = min(width / (maxW - minW), height / (maxH - minH))
         return (QPointF(k * (x.x() - minW), k * (x.y() - minH)) for x in self.points)
 
-    def wheelEvent(self, event):
-        self.graphicView.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        if event.angleDelta().y() > 0:
-            self.graphicView.scale(1.25, 1.25)
-        else:
-            self.graphicView.scale(0.8, 0.8)
 
     def setGeometry(self, a0: QRect):
         super().setGeometry(a0)
