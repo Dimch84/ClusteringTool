@@ -27,14 +27,14 @@ class ScalableGraphicsView(QGraphicsView):
 class ClusteringView(QWidget):
     zoom_signal = pyqtSignal(bool)
 
-    def __init__(self, points: list[QPointF], target: list[int]):
+    def __init__(self, points: list[QPointF], pred: list[int]):
         super().__init__()
         scene = QGraphicsScene()
         self.points = points
-        self.target = target
+        self.pred = pred
         self.graphicView = ScalableGraphicsView(scene, self)
         self.graphicView.setMinimumSize(800, 600)
-        self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(target)))
+        self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
         self.graphicView.setScene(self.__getSceneWithPoints())
         self.show()
 
@@ -43,8 +43,8 @@ class ClusteringView(QWidget):
         points = self.__resizePoints()
         for idx, point in enumerate(points):
             scene.addEllipse(point.x(), point.y(), 10, 10,
-                             QPen(self.colors[self.target[idx]], 3, Qt.SolidLine),
-                             QBrush(self.colors[self.target[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
+                             QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
+                             QBrush(self.colors[self.pred[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 
     def __resizePoints(self):
@@ -56,7 +56,6 @@ class ClusteringView(QWidget):
         height = self.graphicView.height()
         k = min(width / (maxW - minW), height / (maxH - minH))
         return (QPointF(k * (x.x() - minW), k * (x.y() - minH)) for x in self.points)
-
 
     def setGeometry(self, a0: QRect):
         super().setGeometry(a0)
