@@ -1,17 +1,44 @@
 import random
-from PyQt5.QtCore import Qt, QPointF, QRect
+import numpy as np
+from PyQt5.QtCore import Qt, QPointF, QRect, pyqtSignal
 from PyQt5.QtGui import QColor, QBrush, QPen
-from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem
+from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem, QSizePolicy
+from PyQt5.QtGui import QTransform
+from sklearn.decomposition import PCA
+
+
+class ScalableGraphicsView(QGraphicsView):
+    def __init__(self, scene, parent):
+        super().__init__(scene, parent)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.zoom = 1
+
+    def wheelEvent(self, event):
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        if event.angleDelta().y() > 0:
+            self.zoom = min(5.0, self.zoom * 1.12)
+        else:
+            self.zoom = max(0.2, self.zoom / 1.12)
+        self.updateView()
+
+    def updateView(self):
+        self.setTransform(QTransform().scale(self.zoom, self.zoom))
 
 
 class ClusteringView(QWidget):
-    def __init__(self, points: list[QPointF], target: list[int]):
+    zoom_signal = pyqtSignal(bool)
+
+    def __init__(self, points: np.ndarray, pred: list[int]):
         super().__init__()
         scene = QGraphicsScene()
-        self.points = points
-        self.target = target
-        self.graphicView = QGraphicsView(scene, self)
-        self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(target)))
+        if points.shape[1] != 2:
+            points = PCA(n_components=2).fit_transform(points)
+        self.points = list(map(lambda point: QPointF(point[0], point[1]), points))
+        self.pred = pred
+        self.graphicView = ScalableGraphicsView(scene, self)
+        self.graphicView.setMinimumSize(800, 600)
+        self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
         self.graphicView.setScene(self.__getSceneWithPoints())
         self.show()
 
@@ -20,8 +47,8 @@ class ClusteringView(QWidget):
         points = self.__resizePoints()
         for idx, point in enumerate(points):
             scene.addEllipse(point.x(), point.y(), 10, 10,
-                             QPen(self.colors[self.target[idx]], 3, Qt.SolidLine),
-                             QBrush(self.colors[self.target[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
+                             QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
+                             QBrush(self.colors[self.pred[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 
     def __resizePoints(self):
@@ -33,13 +60,6 @@ class ClusteringView(QWidget):
         height = self.graphicView.height()
         k = min(width / (maxW - minW), height / (maxH - minH))
         return (QPointF(k * (x.x() - minW), k * (x.y() - minH)) for x in self.points)
-
-    def wheelEvent(self, event):
-        self.graphicView.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        if event.angleDelta().y() > 0:
-            self.graphicView.scale(1.25, 1.25)
-        else:
-            self.graphicView.scale(0.8, 0.8)
 
     def setGeometry(self, a0: QRect):
         super().setGeometry(a0)
