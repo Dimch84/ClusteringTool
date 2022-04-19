@@ -1,6 +1,26 @@
+from collections.abc import Callable
 import sklearn.metrics as sm
 import numpy as np
 import math
+
+
+class Metric:
+    # Works with supposition that each metric either takes (data, pred) or (target, pred)
+    name: str
+    score_fun: Callable
+    needs_target: bool
+
+    def __init__(self, name: str, score_fun: Callable, needs_target: bool):
+        self.name = name
+        self.score_fun = score_fun
+        self.needs_target = needs_target
+
+    def calc_score(self, data: np.ndarray = None, target: list[int] = None, pred: list[int] = None):
+        if pred is None or (self.needs_target and target is None) or (not self.needs_target and data is None):
+            return None
+        if self.needs_target:
+            return self.score_fun(target, pred)
+        return self.score_fun(data, pred)
 
 
 def get_intersection_table(target: list[int], pred: list[int]):
@@ -29,11 +49,13 @@ def purity_score(target: list[int], pred: list[int]):
     return sum(map(max, m)) / n
 
 
-metrics = list([sm.rand_score,
-                sm.adjusted_rand_score,
-                sm.fowlkes_mallows_score,
-                sm.completeness_score,
-                sm.calinski_harabasz_score,
-                sm.silhouette_score,
-                minkowski_score,
-                purity_score])
+metrics = [
+    Metric("Rand", sm.rand_score, True),
+    Metric("Adjusted rand", sm.rand_score, True),
+    Metric("Fowlkes-Mallows", sm.fowlkes_mallows_score, True),
+    Metric("Completeness", sm.completeness_score, True),
+    Metric("Calinski-Harabasz", sm.calinski_harabasz_score, False),
+    Metric("Silhouette", sm.silhouette_score, False),
+    Metric("Minkowski", minkowski_score, True),
+    Metric("Purity", purity_score, True)
+]

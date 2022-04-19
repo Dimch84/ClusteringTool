@@ -37,7 +37,7 @@ class AlgoResultsWidget(QWidget):
 
     def create_plot(self):
         dataset = self.datasets[self.current_dataset]
-        return ClusteringView(dataset.data, self.algo.run(dataset.data, dataset.num_of_classes))
+        return ClusteringView(dataset.data, list(self.algo.run(dataset.data, dataset.num_of_classes)))
 
     def create_selector(self):
         selector = QComboBox()

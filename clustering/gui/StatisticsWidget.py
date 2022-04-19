@@ -1,10 +1,7 @@
-import random
-from metrics import metrics
-from PyQt5.QtCore import Qt, QPointF, QRect, pyqtSignal
-from PyQt5.QtGui import QColor, QBrush, QPen
 from PyQt5.QtWidgets import QWidget, QLabel, QFormLayout
-from PyQt5.QtGui import QTransform
 import numpy as np
+
+from clustering.metrics import metrics
 
 
 class StatisticsWidget(QWidget):
@@ -15,14 +12,10 @@ class StatisticsWidget(QWidget):
         layout.setVerticalSpacing(20)
         layout.setHorizontalSpacing(50)
 
-        if not data is None:
-            layout.addRow(QLabel("Silhouette:"), QLabel(str(metrics[5](data, pred))))
-            layout.addRow(QLabel("Calinski-Harabasz:"), QLabel(str(metrics[4](data, pred))))
+        if data is not None:
+            for metric in filter(lambda m: not m.needs_target, metrics):
+                layout.addRow(QLabel(metric.name), QLabel(str(metric.calc_score(data=data, pred=pred))))
 
-        if not target is None:
-            layout.addRow(QLabel("Rand:"), QLabel(str(metrics[0](target, pred))))
-            layout.addRow(QLabel("Adjusted rand:"), QLabel(str(metrics[1](target, pred))))
-            layout.addRow(QLabel("Fowlkes-Mallows:"), QLabel(str(metrics[2](target, pred))))
-            layout.addRow(QLabel("Completeness:"), QLabel(str(metrics[3](target, pred))))
-            layout.addRow(QLabel("Minkowski:"), QLabel(str(metrics[6](target, pred))))
-            layout.addRow(QLabel("Purity:"), QLabel(str(metrics[7](target, pred))))
+        if target is not None:
+            for metric in filter(lambda m: m.needs_target, metrics):
+                layout.addRow(QLabel(metric.name), QLabel(str(metric.calc_score(target=target, pred=pred))))
