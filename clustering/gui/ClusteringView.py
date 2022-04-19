@@ -1,8 +1,10 @@
 import random
+import numpy as np
 from PyQt5.QtCore import Qt, QPointF, QRect, pyqtSignal
 from PyQt5.QtGui import QColor, QBrush, QPen
 from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem, QSizePolicy
 from PyQt5.QtGui import QTransform
+from sklearn.decomposition import PCA
 
 
 class ScalableGraphicsView(QGraphicsView):
@@ -27,10 +29,12 @@ class ScalableGraphicsView(QGraphicsView):
 class ClusteringView(QWidget):
     zoom_signal = pyqtSignal(bool)
 
-    def __init__(self, points: list[QPointF], pred: list[int]):
+    def __init__(self, points: np.ndarray, pred: np.ndarray):
         super().__init__()
         scene = QGraphicsScene()
-        self.points = points
+        if points.shape[1] != 2:
+            points = PCA(n_components=2).fit_transform(points)
+        self.points = list(map(lambda point: QPointF(point[0], point[1]), points))
         self.pred = pred
         self.graphicView = ScalableGraphicsView(scene, self)
         self.graphicView.setMinimumSize(800, 600)

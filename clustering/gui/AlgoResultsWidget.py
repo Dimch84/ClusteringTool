@@ -1,18 +1,10 @@
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QGridLayout, QComboBox
-from PyQt5.QtCore import QPointF, QRect
-from sklearn.decomposition import PCA
-import numpy as np
+from PyQt5.QtWidgets import QWidget, QGridLayout, QComboBox
+from PyQt5.QtCore import QRect
 
 from clustering.algorithm import Algorithm
 from clustering.dataset import load_all_datasets
 from clustering.gui.ClusteringView import ClusteringView
 from clustering.gui.StatisticsWidget import StatisticsWidget
-
-
-def data_converse(data: np.ndarray) -> np.ndarray:
-    if data.shape[1] == 2:
-        return data
-    return PCA(n_components=2).fit_transform(data)
 
 
 class AlgoResultsWidget(QWidget):
@@ -45,9 +37,13 @@ class AlgoResultsWidget(QWidget):
 
     def create_plot(self):
         dataset = self.datasets[self.current_dataset]
-        points = data_converse(dataset.data)
-        points = list(map(lambda point: QPointF(point[0], point[1]), points))
-        return ClusteringView(points, list(self.algo.run(dataset.data, dataset.num_of_classes)))
+        return ClusteringView(dataset.data, self.algo.run(dataset.data, dataset.num_of_classes))
+
+    def create_selector(self):
+        selector = QComboBox()
+        selector.addItems(self.datasets)
+        selector.activated[str].connect(self.change_current_dataset)
+        return selector
 
     def redraw_plot(self):
         prev_plot = self.plot_widget
@@ -65,9 +61,3 @@ class AlgoResultsWidget(QWidget):
     def change_current_dataset(self, dataset_name: str):
         self.current_dataset = dataset_name
         self.redraw_plot()
-
-    def create_selector(self):
-        selector = QComboBox()
-        selector.addItems(self.datasets)
-        selector.activated[str].connect(self.change_current_dataset)
-        return selector
