@@ -39,19 +39,18 @@ class ClusteringView(QWidget):
         self.graphicView = ScalableGraphicsView(scene, self)
         self.graphicView.setMinimumSize(800, 600)
         self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
-        self.graphicView.setScene(self.__getSceneWithPoints())
-        self.show()
+        self.graphicView.setScene(self.__get_scene_with_points())
 
-    def __getSceneWithPoints(self):
+    def __get_scene_with_points(self):
         scene = QGraphicsScene()
-        points = self.__resizePoints()
+        points = self.__resize_points()
         for idx, point in enumerate(points):
             scene.addEllipse(point.x(), point.y(), 10, 10,
                              QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
                              QBrush(self.colors[self.pred[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 
-    def __resizePoints(self):
+    def __resize_points(self):
         minW = min(x.x() for x in self.points)
         maxW = max(x.x() for x in self.points)
         minH = min(x.y() for x in self.points)
@@ -64,4 +63,4 @@ class ClusteringView(QWidget):
     def setGeometry(self, a0: QRect):
         super().setGeometry(a0)
         self.graphicView.setGeometry(0, 0, a0.width(), a0.height())
-        self.graphicView.setScene(self.__getSceneWithPoints())
+        self.graphicView.setScene(self.__get_scene_with_points())

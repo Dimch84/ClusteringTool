@@ -5,7 +5,7 @@ from clustering.metrics import metrics
 
 
 class StatisticsWidget(QWidget):
-    def __init__(self, data: np.ndarray, target: list[int], pred: list[int]):
+    def __init__(self, data: np.ndarray, target: np.ndarray, pred: np.ndarray):
         super().__init__()
         self.setMinimumSize(400, 700)
         layout = QFormLayout(self)
