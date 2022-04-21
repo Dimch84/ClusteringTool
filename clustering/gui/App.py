@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, QStackedWidget
 
 from clustering.algorithm import load_algorithms
 from clustering.dataset import load_all_datasets
@@ -15,7 +15,9 @@ class App(QWidget):
         self.datasets = {dataset.name: dataset for dataset in load_all_datasets()}
         self.dataset_selector = self.create_selector()
         self.current_dataset = self.dataset_selector.currentText()
-        self.tab_widget = QTabWidget()
+        self.tab_widget = QStackedWidget()
+        self.tab_widget.addWidget(QTabWidget())
+        self.windows = {self.current_dataset: self.tab_widget.currentWidget()}
 
         self.add_tab_button = QPushButton('Add algorithm')
         self.add_tab_button.clicked.connect(self.add_tab)
@@ -31,7 +33,7 @@ class App(QWidget):
         dlg = AddAlgoDialog(self)
         if dlg.exec():
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            self.tab_widget.addTab(AlgoResultsTab(algorithms[dlg.current_algorithm], dataset), dlg.current_algorithm)
+            self.tab_widget.currentWidget().addTab(AlgoResultsTab(algorithms[dlg.current_algorithm], dataset), dlg.current_algorithm)
 
     def create_selector(self):
         selector = QComboBox()
@@ -41,4 +43,8 @@ class App(QWidget):
 
     def change_current_dataset(self, dataset_name: str):
         self.current_dataset = dataset_name
-        self.tab_widget.clear()
+        if self.current_dataset not in self.windows:
+            new_widget = QTabWidget()
+            self.windows[self.current_dataset] = new_widget
+            self.tab_widget.addWidget(new_widget)
+        self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
