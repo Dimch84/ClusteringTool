@@ -7,9 +7,10 @@ from clustering.gui.AlgoResultsTab.StatisticsWidget import StatisticsWidget
 
 
 class AlgoResultsTab(QWidget):
-    def __init__(self, algo: Algorithm, dataset: Dataset, parent=None):
+    def __init__(self, algo: Algorithm, dataset: Dataset, parent=None, results=None):
         self.algo = algo
         self.dataset = dataset
+        self.results = results
 
         super(AlgoResultsTab, self).__init__(parent)
 
@@ -21,11 +22,17 @@ class AlgoResultsTab(QWidget):
         layout.addWidget(self.statistics_widget, 1, 2, 2, 1)
         self.setLayout(layout)
 
+    def get_results(self):
+        # TODO: check if self.results are up-to-date
+        results = self.results if self.results is not None else self.algo.run(self.dataset.data, self.dataset.num_of_classes)
+        self.results = results
+        return results
+
     def create_statistics(self):
-        pred = self.algo.run(self.dataset.data, self.dataset.num_of_classes)
+        pred = self.get_results()
         target = self.dataset.target
         data = self.dataset.data
         return StatisticsWidget(data, target, pred)
 
     def create_plot(self):
-        return ClusteringView(self.dataset.data, list(self.algo.run(self.dataset.data, self.dataset.num_of_classes)))
+        return ClusteringView(self.dataset.data, self.get_results())

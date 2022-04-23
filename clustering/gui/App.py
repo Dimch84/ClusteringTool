@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, QStackedWidget
+from PyQt5.QtCore import QSettings
 
 from clustering.algorithm import load_algorithms
 from clustering.dataset import load_all_datasets
@@ -48,3 +49,38 @@ class App(QWidget):
             self.windows[self.current_dataset] = new_widget
             self.tab_widget.addWidget(new_widget)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
+
+    def save_session(self, file_name: str = "__last_run.ini"):
+        session = QSettings(file_name, QSettings.IniFormat)
+        data = {}
+        for dataset in self.windows:
+            window = self.windows[dataset]
+            data[dataset] = []
+            cnt = window.count()
+            for i in range(0, cnt):
+                tab = window.widget(i)
+                data[dataset].append({
+                    "name": tab.algo.name,
+                    "results": tab.results
+                })
+        session.setValue("data", data)
+        session.sync()
+
+    def reload_session(self, file_name: str = "__last_run.ini"):
+        session = QSettings(file_name, QSettings.IniFormat)
+        data = session.value("data")
+        if data is None:
+            return
+        algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
+        for dataset in data:
+            self.change_current_dataset(dataset)
+            for tab in data[dataset]:
+                algo = tab["name"]
+                self.tab_widget.currentWidget().addTab(
+                    AlgoResultsTab(algorithms[algo], self.datasets[dataset], results=tab["results"]),
+                    algo
+                )
+        self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
+
+    def closeEvent(self, e):
+        self.save_session()
