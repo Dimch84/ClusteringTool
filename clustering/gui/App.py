@@ -1,4 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, QStackedWidget
+from collections.abc import Callable
+
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, \
+    QStackedWidget, QAction, QFileDialog
 from PyQt5.QtCore import QSettings
 
 from clustering.algorithm import load_algorithms
@@ -7,7 +10,7 @@ from clustering.gui.AddAlgoDialog import AddAlgoDialog
 from clustering.gui.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
 
 
-class App(QWidget):
+class CentralWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('clustering')
@@ -17,8 +20,8 @@ class App(QWidget):
         self.dataset_selector = self.create_selector()
         self.current_dataset = self.dataset_selector.currentText()
         self.tab_widget = QStackedWidget()
-        self.tab_widget.addWidget(QTabWidget())
-        self.windows = {self.current_dataset: self.tab_widget.currentWidget()}
+        self.windows = {}
+        self.change_current_dataset(self.current_dataset)
 
         self.add_tab_button = QPushButton('Add algorithm')
         self.add_tab_button.clicked.connect(self.add_tab)
@@ -34,7 +37,8 @@ class App(QWidget):
         dlg = AddAlgoDialog(self)
         if dlg.exec():
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            self.tab_widget.currentWidget().addTab(AlgoResultsTab(algorithms[dlg.current_algorithm], dataset), dlg.current_algorithm)
+            self.tab_widget.currentWidget().addTab(AlgoResultsTab(algorithms[dlg.current_algorithm], dataset),
+                                                   dlg.current_algorithm)
 
     def create_selector(self):
         selector = QComboBox()
@@ -46,6 +50,8 @@ class App(QWidget):
         self.current_dataset = dataset_name
         if self.current_dataset not in self.windows:
             new_widget = QTabWidget()
+            new_widget.setTabsClosable(True)
+            new_widget.tabCloseRequested.connect(lambda index: new_widget.removeTab(index))
             self.windows[self.current_dataset] = new_widget
             self.tab_widget.addWidget(new_widget)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
@@ -82,5 +88,38 @@ class App(QWidget):
                 )
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
 
+
+class App(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setCentralWidget(CentralWidget())
+        self.centralWidget().reload_session()
+
+        menu_bar = self.menuBar()
+        file_menu = menu_bar.addMenu('&File')
+        file_menu.addAction(self.create_new_action('&Save session', 'Ctrl+S', self.save_session))
+        file_menu.addAction(self.create_new_action('&Load session', 'Ctrl+O', self.load_session))
+        file_menu.addAction(self.create_new_action('&New session', 'Ctrl+N', self.new_session))
+
+    def create_new_action(self, name: str, shortcut: str, handler: Callable):
+        action = QAction(name, self)
+        action.setShortcut(shortcut)
+        action.triggered.connect(handler)
+        return action
+
+    def save_session(self):
+        name = QFileDialog.getSaveFileName(self, 'Save session', filter='*.ini')
+        self.centralWidget().save_session(name[0])
+
+    def load_session(self):
+        name = QFileDialog.getOpenFileName(self, 'Load session', filter='*.ini')
+        self.centralWidget().close()
+        self.setCentralWidget(CentralWidget())
+        self.centralWidget().reload_session(name[0])
+
+    def new_session(self):
+        self.centralWidget().close()
+        self.setCentralWidget(CentralWidget())
+
     def closeEvent(self, e):
-        self.save_session()
+        self.centralWidget().save_session()
