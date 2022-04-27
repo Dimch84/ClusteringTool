@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, \
-    QStackedWidget, QAction, QFileDialog
+    QStackedWidget, QAction, QFileDialog, QDialog
 from PyQt5.QtCore import QSettings
 
 from clustering.algorithm import load_algorithms
@@ -17,14 +17,14 @@ class CentralWidget(QWidget):
         self.setGeometry(70, 100, 1800, 900)
 
         self.datasets = {dataset.name: dataset for dataset in load_all_datasets()}
-        self.dataset_selector = self.create_selector()
+        self.dataset_selector = self.__create_selector()
         self.current_dataset = self.dataset_selector.currentText()
         self.tab_widget = QStackedWidget()
         self.windows = {}
-        self.change_current_dataset(self.current_dataset)
+        self.__change_current_dataset(self.current_dataset)
 
         self.add_tab_button = QPushButton('Add algorithm')
-        self.add_tab_button.clicked.connect(self.add_tab)
+        self.add_tab_button.clicked.connect(self.__add_tab_to_current_widget)
 
         layout = QGridLayout()
         layout.addWidget(self.dataset_selector, 0, 0, 1, 1)
@@ -32,24 +32,28 @@ class CentralWidget(QWidget):
         layout.addWidget(self.tab_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
-    def add_tab(self):
+    def __add_tab_to_current_widget(self):
         dataset = self.datasets[self.current_dataset]
-        dlg = AddAlgoDialog(self)
-        if dlg.exec():
+        add_algo_dialog = AddAlgoDialog(self)
+        if add_algo_dialog.exec() == QDialog.Accepted:
+            res = add_algo_dialog.get_result()
+            algo_name = res.algo_name
+            num_of_clusters = res.num_of_clusters
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            self.tab_widget.currentWidget().addTab(AlgoResultsTab(algorithms[dlg.current_algorithm], dataset),
-                                                   dlg.current_algorithm)
+            self.tab_widget.currentWidget().addTab(
+                AlgoResultsTab(algo=algorithms[algo_name], dataset=dataset, num_of_clusters=num_of_clusters), algo_name)
 
-    def create_selector(self):
+    def __create_selector(self):
         selector = QComboBox()
         selector.addItems(self.datasets)
-        selector.activated[str].connect(self.change_current_dataset)
+        selector.activated[str].connect(self.__change_current_dataset)
         return selector
 
-    def change_current_dataset(self, dataset_name: str):
+    def __change_current_dataset(self, dataset_name: str):
         self.current_dataset = dataset_name
         if self.current_dataset not in self.windows:
             new_widget = QTabWidget()
+            new_widget.setMovable(True)
             new_widget.setTabsClosable(True)
             new_widget.tabCloseRequested.connect(lambda index: new_widget.removeTab(index))
             self.windows[self.current_dataset] = new_widget
@@ -67,6 +71,7 @@ class CentralWidget(QWidget):
                 tab = window.widget(i)
                 data[dataset].append({
                     "name": tab.algo.name,
+                    "num_of_clusters": tab.num_of_clusters,
                     "results": tab.results
                 })
         session.setValue("data", data)
@@ -79,13 +84,15 @@ class CentralWidget(QWidget):
             return
         algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
         for dataset in data:
-            self.change_current_dataset(dataset)
+            self.__change_current_dataset(dataset)
             for tab in data[dataset]:
-                algo = tab["name"]
+                algo_name = tab["name"]
                 self.tab_widget.currentWidget().addTab(
-                    AlgoResultsTab(algorithms[algo], self.datasets[dataset], results=tab["results"]),
-                    algo
-                )
+                    AlgoResultsTab(algorithms[algo_name],
+                                   self.datasets[dataset],
+                                   num_of_clusters=tab["num_of_clusters"],
+                                   results=tab["results"]),
+                    algo_name)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
 
 

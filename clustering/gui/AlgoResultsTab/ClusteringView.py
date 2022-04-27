@@ -20,9 +20,9 @@ class ScalableGraphicsView(QGraphicsView):
             self.zoom = min(5.0, self.zoom * 1.12)
         else:
             self.zoom = max(0.2, self.zoom / 1.12)
-        self.updateView()
+        self.__update_view()
 
-    def updateView(self):
+    def __update_view(self):
         self.setTransform(QTransform().scale(self.zoom, self.zoom))
 
 

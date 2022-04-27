@@ -7,15 +7,16 @@ from clustering.gui.AlgoResultsTab.StatisticsWidget import StatisticsWidget
 
 
 class AlgoResultsTab(QWidget):
-    def __init__(self, algo: Algorithm, dataset: Dataset, parent=None, results=None):
+    def __init__(self, algo: Algorithm, dataset: Dataset, num_of_clusters: int, results=None, parent=None):
         self.algo = algo
         self.dataset = dataset
         self.results = results
+        self.num_of_clusters = num_of_clusters
 
         super(AlgoResultsTab, self).__init__(parent)
 
-        self.statistics_widget = self.create_statistics()
-        self.plot_widget = self.create_plot()
+        self.statistics_widget = self.__create_statistics()
+        self.plot_widget = self.__create_plot()
 
         layout = QGridLayout()
         layout.addWidget(self.plot_widget, 1, 0, 2, 2)
@@ -24,15 +25,16 @@ class AlgoResultsTab(QWidget):
 
     def get_results(self):
         # TODO: check if self.results are up-to-date
-        results = self.results if self.results is not None else self.algo.run(self.dataset.data, self.dataset.num_of_classes)
+        results = self.results if self.results is not None else \
+            self.algo.run(self.dataset.data, self.num_of_clusters)
         self.results = results
         return results
 
-    def create_statistics(self):
+    def __create_statistics(self):
         pred = self.get_results()
         target = self.dataset.target
         data = self.dataset.data
         return StatisticsWidget(data, target, pred)
 
-    def create_plot(self):
+    def __create_plot(self):
         return ClusteringView(self.dataset.data, self.get_results())
