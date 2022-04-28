@@ -7,15 +7,16 @@ from clustering.gui.AlgoResultsTab.StatisticsWidget import StatisticsWidget
 
 
 class AlgoResultsTab(QWidget):
-    def __init__(self, algo: Algorithm, dataset: Dataset, num_of_clusters: int, results=None, parent=None):
+    def __init__(self, algo: Algorithm, dataset: Dataset, num_of_clusters: int, metric_names: set[str], results=None, parent=None):
         self.algo = algo
         self.dataset = dataset
         self.results = results
         self.num_of_clusters = num_of_clusters
+        self.metric_names = metric_names
 
         super(AlgoResultsTab, self).__init__(parent)
 
-        self.statistics_widget = self.__create_statistics()
+        self.statistics_widget = self.__create_statistics(self.metric_names)
         self.plot_widget = self.__create_plot()
 
         layout = QGridLayout()
@@ -30,11 +31,11 @@ class AlgoResultsTab(QWidget):
         self.results = results
         return results
 
-    def __create_statistics(self):
+    def __create_statistics(self, metric_names: set[str]):
         pred = self.get_results()
         target = self.dataset.target
         data = self.dataset.data
-        return StatisticsWidget(data, target, pred)
+        return StatisticsWidget(data, metric_names, target, pred)
 
     def __create_plot(self):
         return ClusteringView(self.dataset.data, self.get_results())

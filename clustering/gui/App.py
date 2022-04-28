@@ -1,9 +1,10 @@
 from collections.abc import Callable
 
-from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QVBoxLayout, QPushButton, QGridLayout, QComboBox, \
+from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGridLayout, QComboBox, \
     QStackedWidget, QAction, QFileDialog, QDialog
 from PyQt5.QtCore import QSettings
 
+from clustering.metrics import metrics
 from clustering.algorithm import load_algorithms
 from clustering.dataset import load_all_datasets
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
@@ -39,9 +40,13 @@ class CentralWidget(QWidget):
             res = add_algo_dialog.get_result()
             algo_name = res.algo_name
             num_of_clusters = res.num_of_clusters
+            selected_metrics = res.selected_metrics
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
             self.tab_widget.currentWidget().addTab(
-                AlgoResultsTab(algo=algorithms[algo_name], dataset=dataset, num_of_clusters=num_of_clusters), algo_name)
+                AlgoResultsTab(algo=algorithms[algo_name],
+                               dataset=dataset,
+                               num_of_clusters=num_of_clusters,
+                               metric_names=selected_metrics), algo_name)
 
     def __create_selector(self):
         selector = QComboBox()
@@ -72,6 +77,7 @@ class CentralWidget(QWidget):
                 data[dataset].append({
                     "name": tab.algo.name,
                     "num_of_clusters": tab.num_of_clusters,
+                    "metric_names": tab.metric_names,
                     "results": tab.results
                 })
         session.setValue("data", data)
@@ -91,6 +97,7 @@ class CentralWidget(QWidget):
                     AlgoResultsTab(algorithms[algo_name],
                                    self.datasets[dataset],
                                    num_of_clusters=tab["num_of_clusters"],
+                                   metric_names=tab.get("metric_names", [metric.name for metric in metrics]),
                                    results=tab["results"]),
                     algo_name)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
@@ -101,6 +108,7 @@ class App(QMainWindow):
         super().__init__()
         self.setCentralWidget(CentralWidget())
         self.centralWidget().reload_session()
+        self.setGeometry(70, 100, 1800, 900)
 
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('&File')

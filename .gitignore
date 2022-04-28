@@ -1,5 +1,6 @@
 venv
 clustering/algorithms/__pycache__
 clustering/gui/__pycache__
+clustering/gui/AlgoResultsTab/__pycache__
 clustering/__pycache__
 .idea

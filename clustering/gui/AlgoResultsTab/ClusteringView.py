@@ -29,7 +29,7 @@ class ScalableGraphicsView(QGraphicsView):
 class ClusteringView(QWidget):
     zoom_signal = pyqtSignal(bool)
 
-    def __init__(self, points: np.ndarray, pred: list[int]):
+    def __init__(self, points: np.ndarray, pred: np.ndarray):
         super().__init__()
         scene = QGraphicsScene()
         if points.shape[1] != 2:

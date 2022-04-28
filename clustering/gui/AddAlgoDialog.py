@@ -1,46 +1,76 @@
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QComboBox, QLineEdit
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QComboBox, QLineEdit, QFormLayout, QLabel, \
+    QCheckBox, QGroupBox
 from clustering.algorithm import load_algorithms
 from dataclasses import dataclass
+from clustering.metrics import metrics
 
 
 @dataclass
-class AddAlgoDialogResults():
+class AddAlgoDialogResults:
     algo_name: str
     num_of_clusters: int
+    selected_metrics: set
 
 
 class AddAlgoDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
-
+        self.selected_metrics = set()
         self.algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-        self.algo_selector = self.__create_selector()
-        self.current_algorithm = self.algo_selector.currentText()
 
         self.setWindowTitle("Algorithm settings")
-        self.setMinimumSize(200, 400)
+        self.setMinimumSize(600, 400)
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-        self.num_of_clusters_input = QLineEdit()
-        self.num_of_clusters_input.setPlaceholderText("Enter the number of clusters")
-        self.num_of_clusters_input.textChanged.connect(self.__change_current_num_of_clusters)
-        self.num_of_clusters = 0
-
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.algo_selector, )
-        self.layout.addWidget(self.num_of_clusters_input)
-        self.layout.addWidget(self.buttonBox)
+        self.layout = QFormLayout()
+        self.layout.addWidget(self.__create_algo_selector())
+        self.layout.addWidget(self.__create_num_of_clusters_inp())
+        self.layout.addWidget(self.__create_metrics_selector())
+        self.layout.addWidget(self.__create_button_box())
         self.setLayout(self.layout)
 
-    def __create_selector(self):
-        selector = QComboBox()
-        selector.addItems(self.algorithms)
-        selector.activated[str].connect(self.__change_current_algorithm)
+    def __create_metrics_selector(self):
+        selector = QGroupBox("Metrics")
+        layout = QVBoxLayout()
+        for metric in metrics:
+            checkBox = QCheckBox(metric.name)
+            checkBox.stateChanged.connect(lambda x, y=metric.name: self.add_metric(y) if x else self.erase_metric(y))
+            layout.addWidget(checkBox)
+        selector.setLayout(layout)
         return selector
+
+    def add_metric(self, metric_name):
+        self.selected_metrics.add(metric_name)
+
+    def erase_metric(self, metric_name):
+        self.selected_metrics.discard(metric_name)
+
+    def __create_algo_selector(self):
+        selector = QGroupBox("Algorithms")
+        layout = QVBoxLayout()
+        box = QComboBox()
+        box.addItems(self.algorithms)
+        box.activated[str].connect(self.__change_current_algorithm)
+        self.current_algorithm = box.currentText()
+        layout.addWidget(box)
+        selector.setLayout(layout)
+        return selector
+
+    def __create_num_of_clusters_inp(self):
+        res = QGroupBox("Num of clusters")
+        layout = QVBoxLayout()
+        num_of_clusters_input = QLineEdit()
+        num_of_clusters_input.setPlaceholderText("Enter the number of clusters")
+        num_of_clusters_input.textChanged.connect(self.__change_current_num_of_clusters)
+        layout.addWidget(num_of_clusters_input)
+        res.setLayout(layout)
+        return res
+
+    def __create_button_box(self):
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttonBox = QDialogButtonBox(QBtn)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        return buttonBox
 
     def __change_current_num_of_clusters(self, text: str):
         self.num_of_clusters = int(text)
@@ -49,4 +79,4 @@ class AddAlgoDialog(QDialog):
         self.current_algorithm = algorithm_name
 
     def get_result(self):
-        return AddAlgoDialogResults(self.current_algorithm, self.num_of_clusters)
+        return AddAlgoDialogResults(self.current_algorithm, self.num_of_clusters, self.selected_metrics)
