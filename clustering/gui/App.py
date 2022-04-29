@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGrid
     QStackedWidget, QAction, QFileDialog, QDialog, QErrorMessage, QMessageBox
 from PyQt5.QtCore import QSettings
 
-from clustering.scores import scores
 from clustering.algorithm import load_algorithms, load_algorithms_from_module
 from clustering.dataset import load_all_datasets
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
@@ -16,8 +15,6 @@ class CentralWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('clustering')
-        self.setGeometry(70, 100, 1800, 900)
-
         self.datasets = {dataset.name: dataset for dataset in load_all_datasets()}
         self.dataset_selector = self.__create_selector()
         self.current_dataset = self.dataset_selector.currentText()
@@ -120,7 +117,7 @@ class App(QMainWindow):
         super().__init__()
         self.setCentralWidget(CentralWidget())
         self.centralWidget().reload_session()
-        self.setGeometry(70, 100, 1800, 900)
+        self.setGeometry(70, 100, 1500, 600)
 
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('&File')

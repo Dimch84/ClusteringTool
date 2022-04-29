@@ -11,7 +11,7 @@ class ScalableGraphicsView(QGraphicsView):
     def __init__(self, scene, parent):
         super().__init__(scene, parent)
         self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum))
         self.zoom = 1
 
     def wheelEvent(self, event):
@@ -47,7 +47,8 @@ class ClusteringView(QWidget):
         for idx, point in enumerate(points):
             scene.addEllipse(point.x(), point.y(), 10, 10,
                              QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
-                             QBrush(self.colors[self.pred[idx]])).setFlag(QGraphicsItem.ItemIsSelectable)
+                             QBrush(self.colors[self.pred[idx]])
+            ).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 
     def __resize_points(self):

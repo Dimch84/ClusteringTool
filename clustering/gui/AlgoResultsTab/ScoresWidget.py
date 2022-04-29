@@ -4,10 +4,10 @@ import numpy as np
 from clustering.scores import scores
 
 
-class StatisticsWidget(QWidget):
+class ScoresWidget(QWidget):
     def __init__(self, data: np.ndarray, score_names: set[str], target: np.ndarray, pred: np.ndarray):
         super().__init__()
-        self.setMinimumSize(400, 700)
+        self.setMinimumSize(400, 300)
         layout = QFormLayout(self)
         layout.setVerticalSpacing(20)
         layout.setHorizontalSpacing(50)
