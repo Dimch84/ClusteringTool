@@ -28,11 +28,7 @@ class AlgoResultsTab(QWidget):
         # TODO: check if self.results are up-to-date
 
         results = self.results if self.results is not None else \
-            self.algo.run(self.dataset.data, {
-                                "k": self.params["k"],
-                                "affinity": self.params["affinity"],
-                                "linkage": self.params["linkage"]
-            })
+            self.algo.run(self.dataset.data, self.params)
         self.results = results
         return results
 
