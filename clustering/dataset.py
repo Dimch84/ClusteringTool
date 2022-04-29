@@ -126,7 +126,8 @@ def delete_dataset(name: str):
     during next launch.
     """
     dump = _read_from_json()
-    os.remove(_dataset_filename(name))
+    if os.path.exists(_dataset_filename(name)):
+        os.remove(_dataset_filename(name))
     dump = list(filter(lambda d: d['name'] != name, dump))
     _write_to_json(dump)
 
@@ -135,4 +136,10 @@ def load_all_datasets() -> [Dataset]:
     """
     :return: list of all datasets, information about which is stored in json and corresponding csv-files.
     """
-    return list(map(_deserialize_dataset, _read_from_json()))
+    result = []
+    for dataset in _read_from_json():
+        try:
+            result.append(_deserialize_dataset(dataset))
+        except FileNotFoundError:
+            delete_dataset(dataset['name'])
+    return result

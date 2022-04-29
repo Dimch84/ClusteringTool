@@ -70,6 +70,10 @@ class CentralWidget(QWidget):
             self.tab_widget.addWidget(new_widget)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
 
+    def add_dataset(self, dataset: Dataset):
+        self.datasets[dataset.name] = dataset
+        self.dataset_selector.addItem(dataset.name)
+
     def save_session(self, file_name: str = "__last_run.ini"):
         session = QSettings(file_name, QSettings.IniFormat)
         data = {}
@@ -95,6 +99,8 @@ class CentralWidget(QWidget):
             return
         algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
         for dataset in data:
+            if dataset not in self.datasets:
+                continue
             self.__change_current_dataset(dataset)
             for tab in data[dataset]:
                 algo_name = tab["name"]
@@ -190,6 +196,7 @@ class App(QMainWindow):
         dataset = Dataset(data, num_of_classes=None, target=None, feature_names=df.columns.tolist(), name=res.name)
         try:
             add_dataset(dataset)
+            self.centralWidget().add_dataset(dataset)
         except DuplicatedNameError:
             self.show_error("Dataset with this name already exists; please, try again with another name")
 
