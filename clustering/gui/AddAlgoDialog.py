@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QComboBox, QLineEdit, QFormLayout, QLabel, \
-    QCheckBox, QGroupBox, QHBoxLayout, QWidget
+    QCheckBox, QGroupBox, QHBoxLayout, QWidget, QErrorMessage
 from clustering.algorithm import load_algorithms, Algorithm
 from dataclasses import dataclass
 from clustering.scores import scores
 
+MIN_NUM_OF_CLUSTERS = 2
+MAX_NUM_OF_CLUSTERS = 20
 
 @dataclass
 class AddAlgoDialogResults:
@@ -23,7 +25,7 @@ class AddAlgoDialog(QDialog):
 
         self.setWindowTitle("Algorithm settings")
         self.setMinimumSize(600, 800)
-
+        self.num_of_clusters = None
         self.params_selector = None
         self.layout = QFormLayout()
         self.layout.addWidget(self.__create_algo_selector())
@@ -33,20 +35,25 @@ class AddAlgoDialog(QDialog):
         self.layout.addWidget(self.__create_button_box())
         self.setLayout(self.layout)
 
+    def __show_error(self, msg: str):
+        error = QErrorMessage(self)
+        error.showMessage(msg)
+        error.exec_()
+
     def __create_scores_selector(self):
         selector = QGroupBox("Scores")
         layout = QVBoxLayout()
         for score in scores:
             checkBox = QCheckBox(score.name)
-            checkBox.stateChanged.connect(lambda x, y=score.name: self.add_score(y) if x else self.erase_score(y))
+            checkBox.stateChanged.connect(lambda x, y=score.name: self.__add_score(y) if x else self.__erase_score(y))
             layout.addWidget(checkBox)
         selector.setLayout(layout)
         return selector
 
-    def add_score(self, score_name):
+    def __add_score(self, score_name):
         self.selected_scores.add(score_name)
 
-    def erase_score(self, score_name):
+    def __erase_score(self, score_name):
         self.selected_scores.discard(score_name)
 
     def __create_algo_selector(self):
@@ -94,12 +101,27 @@ class AddAlgoDialog(QDialog):
     def __create_button_box(self):
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         buttonBox = QDialogButtonBox(QBtn)
-        buttonBox.accepted.connect(self.accept)
+        buttonBox.accepted.connect(self.__accept)
         buttonBox.rejected.connect(self.reject)
         return buttonBox
 
+    def __accept(self):
+        if self.num_of_clusters is None:
+            self.__show_error("Num of clusters is not selected")
+            return
+        elif self.num_of_clusters < MIN_NUM_OF_CLUSTERS:
+            self.__show_error(f"Num of clusters is lower than {MIN_NUM_OF_CLUSTERS}")
+            return
+        elif self.num_of_clusters > MAX_NUM_OF_CLUSTERS:
+            self.__show_error(f"Num of clusters is greater than {MAX_NUM_OF_CLUSTERS}")
+            return
+        self.accept()
+
     def __change_current_num_of_clusters(self, text: str):
-        self.num_of_clusters = int(text)
+        if text.isdecimal():
+            self.num_of_clusters = int(text)
+        else:
+            self.num_of_clusters = None
 
     def __change_current_algorithm(self, algorithm_name: str):
         self.current_algorithm = algorithm_name

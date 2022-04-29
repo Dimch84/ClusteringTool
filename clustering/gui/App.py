@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGrid
     QStackedWidget, QAction, QFileDialog, QDialog, QErrorMessage, QMessageBox
 from PyQt5.QtCore import QSettings
 
-from clustering.scores import scores
 from clustering.algorithm import load_algorithms, load_algorithms_from_module
 from clustering.dataset import load_all_datasets, load_from_csv, add_dataset, normalise_dataset, Dataset, \
     DuplicatedNameError
@@ -18,8 +17,6 @@ class CentralWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('clustering')
-        self.setGeometry(70, 100, 1800, 900)
-
         self.datasets = {dataset.name: dataset for dataset in load_all_datasets()}
         self.dataset_selector = self.__create_selector()
         self.current_dataset = self.dataset_selector.currentText()
@@ -36,22 +33,31 @@ class CentralWidget(QWidget):
         layout.addWidget(self.tab_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
+    def show_error(self, msg: str):
+        error = QErrorMessage(self)
+        error.showMessage(msg)
+        error.exec_()
+
     def __add_tab_to_current_widget(self):
         dataset = self.datasets[self.current_dataset]
         add_algo_dialog = AddAlgoDialog(self)
         if add_algo_dialog.exec() == QDialog.Accepted:
-            res = add_algo_dialog.get_result()
-            algo_name = res.algo_name
-            num_of_clusters = res.num_of_clusters
-            extra_params = res.extra_params
-            selected_scores = res.selected_scores
-            algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            pos = self.tab_widget.currentWidget().addTab(
-                AlgoResultsTab(algo=algorithms[algo_name],
-                               dataset=dataset,
-                               params={"k": num_of_clusters} | extra_params,
-                               score_names=selected_scores), algo_name)
-            self.tab_widget.currentWidget().setCurrentIndex(pos)
+            try:
+                res = add_algo_dialog.get_result()
+                algo_name = res.algo_name
+                num_of_clusters = res.num_of_clusters
+                extra_params = res.extra_params
+                selected_scores = res.selected_scores
+                algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
+                pos = self.tab_widget.currentWidget().addTab(
+                        AlgoResultsTab(algo=algorithms[algo_name],
+                                       dataset=dataset,
+                                       params={"k": num_of_clusters} | extra_params,
+                                       score_names=selected_scores), algo_name)
+                self.tab_widget.currentWidget().setCurrentIndex(pos)
+            except ValueError as err:
+                self.show_error(str(err))
+                return
 
     def __create_selector(self):
         selector = QComboBox()
@@ -119,7 +125,7 @@ class App(QMainWindow):
         super().__init__()
         self.setCentralWidget(CentralWidget())
         self.centralWidget().reload_session()
-        self.setGeometry(70, 100, 1800, 900)
+        self.setGeometry(70, 100, 1500, 600)
 
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('&File')
