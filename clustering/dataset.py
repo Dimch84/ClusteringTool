@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 from sklearn import preprocessing
 import numpy as np
 import pandas
@@ -25,7 +23,7 @@ class Dataset:
     name: str
 
     def __init__(self, data: np.ndarray, num_of_classes: int = None,
-                 target: np.ndarray = None, feature_names: np.ndarray = None, name: str = "Unnamed"):
+                 target: np.ndarray = None, feature_names: [str] = None, name: str = "Unnamed"):
         """
         When function is called, at least one of (num_of_classes, target) should be specified (preferably, exactly one).
         """
@@ -46,6 +44,10 @@ class Dataset:
                f"target = {self.target}\nnum_of_classes = {self.num_of_classes},\nname = {self.name}"
 
 
+class DuplicatedNameError(Exception):
+    pass
+
+
 _json_file = os.path.join('datasets', 'datasets.json')
 
 
@@ -53,28 +55,19 @@ def _dataset_filename(name: str) -> str:
     return os.path.join('datasets', name + '.csv')
 
 
-def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray = None,
-                  column_converter: Callable = lambda it: (it, False)) -> Dataset | None:
-    """
-    Reads data from csv file. At least one of (target, num_of_classes) should be specified explicitly.
+def normalise_dataset(data: np.ndarray) -> np.ndarray:
+    return preprocessing.MinMaxScaler().fit_transform(data)
 
-    If normalise is set to True, for each feature values will be scaled to fit in [0, 1]
+
+def load_from_csv(file_name: str) -> pandas.DataFrame:
+    """
+    Reads dataset from csv file and returns it with all numeric features
     """
     df = pandas.read_csv(file_name)
     groups = df.columns.to_series().groupby(df.dtypes).groups
     groups = {str(k): list(v) for k, v in groups.items()}
     numeric_cols = groups.get('int64', []) + groups.get('float64', [])
-    final_cols, normalise = column_converter(numeric_cols)
-
-    if len(final_cols) == 0:
-        return None
-
-    data = df[final_cols].to_numpy()
-    if normalise:
-        data = preprocessing.MinMaxScaler().fit_transform(data)
-
-    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=final_cols,
-                   name=os.path.splitext(os.path.basename(file_name))[0])
+    return df[numeric_cols]
 
 
 def _save_to_csv(data: Dataset, file_name: str = None):
@@ -96,7 +89,9 @@ def _deserialize_dataset(dataset: dict) -> Dataset:
     name = dataset['name']
     num_of_classes = dataset['num_of_classes']
     target = None if dataset['target'] is None else np.array(dataset['target'])
-    return load_from_csv(_dataset_filename(name), num_of_classes, target)
+    df = load_from_csv(_dataset_filename(name))
+    data = df.to_numpy()
+    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=df.columns.tolist(), name=name)
 
 
 def _write_to_json(datasets: [dict]):
@@ -119,6 +114,8 @@ def add_dataset(dataset: Dataset):
     dump = _read_from_json()
     if dump is None:
         dump = []
+    if dataset.name in [d['name'] for d in dump]:
+        raise DuplicatedNameError()
     dump.append(_serialize_dataset(dataset))
     _write_to_json(dump)
 

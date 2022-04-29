@@ -7,7 +7,8 @@ from PyQt5.QtCore import QSettings
 
 from clustering.scores import scores
 from clustering.algorithm import load_algorithms, load_algorithms_from_module
-from clustering.dataset import load_all_datasets, load_from_csv, add_dataset
+from clustering.dataset import load_all_datasets, load_from_csv, add_dataset, normalise_dataset, Dataset, \
+    DuplicatedNameError
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
 from clustering.gui.AddDatasetDialog import AddDatasetDialog
 from clustering.gui.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
@@ -152,7 +153,7 @@ class App(QMainWindow):
         self.setCentralWidget(CentralWidget())
 
     def add_new_algorithm(self):
-        file = QFileDialog.getOpenFileName(self, 'Load session', filter='*.py')[0]
+        file = QFileDialog.getOpenFileName(self, 'Load new algorithm', filter='*.py')[0]
         if not file:
             return
         basename = os.path.basename(file)
@@ -169,19 +170,28 @@ class App(QMainWindow):
             return
         QMessageBox.information(self, "Info", f"Added new algorithms: {', '.join(it.name for it in new_algos)}")
 
-    def dataset_cols_converter(self, cols: [str]):
-        add_dataset_dialog = AddDatasetDialog(self, cols)
-        add_dataset_dialog.exec()
-        res = add_dataset_dialog.get_result()
-        return res
-
     def add_new_dataset(self):
-        file = QFileDialog.getOpenFileName(self, 'Load session', filter='*.csv')[0]
+        file = QFileDialog.getOpenFileName(self, 'Load new dataset', filter='*.csv')[0]
         if not file:
             return
-        dataset = load_from_csv(file, None, None, self.dataset_cols_converter)
-        if dataset is not None:
+
+        df = load_from_csv(file)
+
+        add_dataset_dialog = AddDatasetDialog(self, df.columns.tolist(),
+                                              os.path.splitext(os.path.basename(file))[0])
+        add_dataset_dialog.exec()
+        res = add_dataset_dialog.get_result()
+
+        df = df[res.included_cols]
+        data = df.to_numpy()
+        if res.normalise:
+            data = normalise_dataset(data)
+
+        dataset = Dataset(data, num_of_classes=None, target=None, feature_names=df.columns.tolist(), name=res.name)
+        try:
             add_dataset(dataset)
+        except DuplicatedNameError:
+            self.show_error("Dataset with this name already exists; please, try again with another name")
 
     def closeEvent(self, e):
         self.centralWidget().save_session()
