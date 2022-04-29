@@ -1,24 +1,24 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QFormLayout
 import numpy as np
 
-from clustering.metrics import metrics
+from clustering.scores import scores
 
 
 class StatisticsWidget(QWidget):
-    def __init__(self, data: np.ndarray, metric_names: set[str], target: np.ndarray, pred: np.ndarray):
+    def __init__(self, data: np.ndarray, score_names: set[str], target: np.ndarray, pred: np.ndarray):
         super().__init__()
         self.setMinimumSize(400, 700)
         layout = QFormLayout(self)
         layout.setVerticalSpacing(20)
         layout.setHorizontalSpacing(50)
-        metrics_dict = {metric.name: metric for metric in metrics}
+        scores_dict = {score.name: score for score in scores}
 
         if data is not None:
-            for metric_name in filter(lambda m: not metrics_dict[m].needs_target, metric_names):
-                metric = metrics_dict[metric_name]
-                layout.addRow(QLabel(metric_name), QLabel(str(metric.calc_score(data=data, pred=pred))))
+            for score_name in filter(lambda m: not scores_dict[m].needs_target, score_names):
+                score = scores_dict[score_name]
+                layout.addRow(QLabel(score_name), QLabel(str(score.calc_score(data=data, pred=pred))))
 
         if target is not None:
-            for metric_name in filter(lambda m: metrics_dict[m].needs_target, metric_names):
-                metric = metrics_dict[metric_name]
-                layout.addRow(QLabel(metric_name), QLabel(str(metric.calc_score(target=target, pred=pred))))
+            for score_name in filter(lambda m: scores_dict[m].needs_target, score_names):
+                score = scores_dict[score_name]
+                layout.addRow(QLabel(score_name), QLabel(str(score.calc_score(target=target, pred=pred))))

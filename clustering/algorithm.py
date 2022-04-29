@@ -8,21 +8,21 @@ class Algorithm:
     """
     This class is used to represent an instance of clustering algorithm.
     """
-    name: str
-    __run: Callable[[np.ndarray, int], np.ndarray]
 
-    def __init__(self, name: str, run: Callable[[np.ndarray, int], np.ndarray]):
+    def __init__(self, name: str, extra_params: dict, run: Callable[[np.ndarray, dict], np.ndarray]):
         """
         :param name: title for algorithm
         :param run: function that implements clustering. It should take exactly two arguments: 2d-array with data
         and the number of classes
         """
         self.name = name
+        self.extra_params = extra_params
         self.__run = run
 
+
     # Can't pass Dataset here, because it may contain target
-    def run(self, data: np.ndarray, k: int) -> np.ndarray:
-        return self.__run(data, k)
+    def run(self, data: np.ndarray, params: dict) -> np.ndarray:
+        return self.__run(data, params)
 
 
 def load_algorithms_from_module(file: str) -> [Algorithm]:

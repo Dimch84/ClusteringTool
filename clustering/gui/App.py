@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGrid
     QStackedWidget, QAction, QFileDialog, QDialog, QErrorMessage, QMessageBox
 from PyQt5.QtCore import QSettings
 
-from clustering.metrics import metrics
+from clustering.scores import scores
 from clustering.algorithm import load_algorithms, load_algorithms_from_module
 from clustering.dataset import load_all_datasets
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
@@ -41,13 +41,14 @@ class CentralWidget(QWidget):
             res = add_algo_dialog.get_result()
             algo_name = res.algo_name
             num_of_clusters = res.num_of_clusters
-            selected_metrics = res.selected_metrics
+            extra_params = res.extra_params
+            selected_scores = res.selected_scores
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
             pos = self.tab_widget.currentWidget().addTab(
                 AlgoResultsTab(algo=algorithms[algo_name],
                                dataset=dataset,
-                               num_of_clusters=num_of_clusters,
-                               metric_names=selected_metrics), algo_name)
+                               params={"k": num_of_clusters} | extra_params,
+                               score_names=selected_scores), algo_name)
             self.tab_widget.currentWidget().setCurrentIndex(pos)
 
     def __create_selector(self):
@@ -78,8 +79,8 @@ class CentralWidget(QWidget):
                 tab = window.widget(i)
                 data[dataset].append({
                     "name": tab.algo.name,
-                    "num_of_clusters": tab.num_of_clusters,
-                    "metric_names": tab.metric_names,
+                    "params": tab.params,
+                    "score_names": tab.score_names,
                     "results": tab.results
                 })
         session.setValue("data", data)
@@ -98,8 +99,8 @@ class CentralWidget(QWidget):
                 self.tab_widget.currentWidget().addTab(
                     AlgoResultsTab(algorithms[algo_name],
                                    self.datasets[dataset],
-                                   num_of_clusters=tab["num_of_clusters"],
-                                   metric_names=tab.get("metric_names", [metric.name for metric in metrics]),
+                                   params=tab["params"],
+                                   score_names=tab["score_names"],
                                    results=tab["results"]),
                     algo_name)
         self.tab_widget.setCurrentWidget(self.windows[self.current_dataset])
