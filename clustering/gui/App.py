@@ -1,11 +1,12 @@
 from collections.abc import Callable
-
+import shutil
+import os
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGridLayout, QComboBox, \
-    QStackedWidget, QAction, QFileDialog, QDialog
+    QStackedWidget, QAction, QFileDialog, QDialog, QErrorMessage, QMessageBox
 from PyQt5.QtCore import QSettings
 
 from clustering.metrics import metrics
-from clustering.algorithm import load_algorithms
+from clustering.algorithm import load_algorithms, load_algorithms_from_module
 from clustering.dataset import load_all_datasets
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
 from clustering.gui.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
@@ -42,11 +43,12 @@ class CentralWidget(QWidget):
             num_of_clusters = res.num_of_clusters
             selected_metrics = res.selected_metrics
             algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            self.tab_widget.currentWidget().addTab(
+            pos = self.tab_widget.currentWidget().addTab(
                 AlgoResultsTab(algo=algorithms[algo_name],
                                dataset=dataset,
                                num_of_clusters=num_of_clusters,
                                metric_names=selected_metrics), algo_name)
+            self.tab_widget.currentWidget().setCurrentIndex(pos)
 
     def __create_selector(self):
         selector = QComboBox()
@@ -116,25 +118,53 @@ class App(QMainWindow):
         file_menu.addAction(self.create_new_action('&Load session', 'Ctrl+O', self.load_session))
         file_menu.addAction(self.create_new_action('&New session', 'Ctrl+N', self.new_session))
 
+        library_menu = menu_bar.addMenu('&Library')
+        library_menu.addAction(self.create_new_action('&Load new algorithm', 'Ctrl+Shift+A', self.add_new_algorithm))
+
     def create_new_action(self, name: str, shortcut: str, handler: Callable):
         action = QAction(name, self)
         action.setShortcut(shortcut)
         action.triggered.connect(handler)
         return action
 
+    @staticmethod
+    def show_error(msg: str):
+        error = QErrorMessage()
+        error.showMessage(msg)
+        error.exec_()
+
     def save_session(self):
-        name = QFileDialog.getSaveFileName(self, 'Save session', filter='*.ini')
-        self.centralWidget().save_session(name[0])
+        name = QFileDialog.getSaveFileName(self, 'Save session', filter='*.ini')[0]
+        self.centralWidget().save_session(name)
 
     def load_session(self):
-        name = QFileDialog.getOpenFileName(self, 'Load session', filter='*.ini')
-        self.centralWidget().close()
-        self.setCentralWidget(CentralWidget())
-        self.centralWidget().reload_session(name[0])
+        name = QFileDialog.getOpenFileName(self, 'Load session', filter='*.ini')[0]
+        if name:
+            self.centralWidget().close()
+            self.setCentralWidget(CentralWidget())
+            self.centralWidget().reload_session(name)
 
     def new_session(self):
         self.centralWidget().close()
         self.setCentralWidget(CentralWidget())
+
+    def add_new_algorithm(self):
+        file = QFileDialog.getOpenFileName(self, 'Load session', filter='*.py')[0]
+        if not file:
+            return
+        basename = os.path.basename(file)
+        new_file = os.path.join('algorithms', basename)
+        if os.path.exists(new_file):
+            self.show_error(f"File with name {basename} is already added to algorithms!")
+            return
+        shutil.copy(file, new_file)
+        try:
+            new_algos = load_algorithms_from_module(basename)
+        except AttributeError:
+            self.show_error(f"Variable 'algorithms' was not found in file!")
+            os.remove(new_file)
+            return
+        QMessageBox.information(self, "Info", f"Added new algorithms: {', '.join(it.name for it in new_algos)}")
 
     def closeEvent(self, e):
         self.centralWidget().save_session()

@@ -25,6 +25,11 @@ class Algorithm:
         return self.__run(data, k)
 
 
+def load_algorithms_from_module(file: str) -> [Algorithm]:
+    lib = importlib.import_module('clustering.algorithms.' + os.path.splitext(os.path.basename(file))[0])
+    return lib.algorithms
+
+
 def load_algorithms() -> [Algorithm]:
     """
     This function scans all python files in ./algorithms folder.
@@ -34,11 +39,10 @@ def load_algorithms() -> [Algorithm]:
     :return: list with all algorithms extracted from those `algorithms` variables
     """
     res = []
-    files = filter(lambda it: os.path.isfile('algorithms/' + it), os.listdir('algorithms'))
+    files = filter(lambda it: os.path.isfile(os.path.join('algorithms', it)), os.listdir('algorithms'))
     for file in files:
-        lib = importlib.import_module('clustering.algorithms.' + os.path.splitext(os.path.basename(file))[0])
         try:
-            res.extend(lib.algorithms)
+            res.extend(load_algorithms_from_module(file))
         except AttributeError:
             print(f"Could not find algorithms variable in file {file}, skipping")
 
