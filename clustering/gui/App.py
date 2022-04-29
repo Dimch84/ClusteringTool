@@ -7,8 +7,9 @@ from PyQt5.QtCore import QSettings
 
 from clustering.scores import scores
 from clustering.algorithm import load_algorithms, load_algorithms_from_module
-from clustering.dataset import load_all_datasets
+from clustering.dataset import load_all_datasets, load_from_csv, add_dataset
 from clustering.gui.AddAlgoDialog import AddAlgoDialog
+from clustering.gui.AddDatasetDialog import AddDatasetDialog
 from clustering.gui.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
 
 
@@ -121,6 +122,7 @@ class App(QMainWindow):
 
         library_menu = menu_bar.addMenu('&Library')
         library_menu.addAction(self.create_new_action('&Load new algorithm', 'Ctrl+Shift+A', self.add_new_algorithm))
+        library_menu.addAction(self.create_new_action('&Load new dataset', 'Ctrl+Shift+D', self.add_new_dataset))
 
     def create_new_action(self, name: str, shortcut: str, handler: Callable):
         action = QAction(name, self)
@@ -166,6 +168,20 @@ class App(QMainWindow):
             os.remove(new_file)
             return
         QMessageBox.information(self, "Info", f"Added new algorithms: {', '.join(it.name for it in new_algos)}")
+
+    def dataset_cols_converter(self, cols: [str]):
+        add_dataset_dialog = AddDatasetDialog(self, cols)
+        add_dataset_dialog.exec()
+        res = add_dataset_dialog.get_result()
+        return res
+
+    def add_new_dataset(self):
+        file = QFileDialog.getOpenFileName(self, 'Load session', filter='*.csv')[0]
+        if not file:
+            return
+        dataset = load_from_csv(file, None, None, self.dataset_cols_converter)
+        if dataset is not None:
+            add_dataset(dataset)
 
     def closeEvent(self, e):
         self.centralWidget().save_session()

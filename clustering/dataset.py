@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from sklearn import preprocessing
 import numpy as np
 import pandas
@@ -19,7 +21,7 @@ class Dataset:
     data: np.ndarray
     target: np.ndarray
     num_of_classes: int
-    feature_names: np.ndarray
+    feature_names: [str]
     name: str
 
     def __init__(self, data: np.ndarray, num_of_classes: int = None,
@@ -31,9 +33,6 @@ class Dataset:
         self.target = target
         self.num_of_classes = num_of_classes
         self.name = name
-
-        if (target is None) and (num_of_classes is None):
-            raise Exception("Either num_of_classes or target should be specified")
 
         if target is not None:
             self.num_of_classes = len(set(target))
@@ -54,8 +53,8 @@ def _dataset_filename(name: str) -> str:
     return os.path.join('datasets', name + '.csv')
 
 
-def _load_from_csv(file_name: str, num_of_classes: int = None,
-                   target: np.ndarray = None, normalise: bool = False) -> Dataset:
+def load_from_csv(file_name: str, num_of_classes: int = None, target: np.ndarray = None,
+                  column_converter: Callable = lambda it: (it, False)) -> Dataset | None:
     """
     Reads data from csv file. At least one of (target, num_of_classes) should be specified explicitly.
 
@@ -65,12 +64,16 @@ def _load_from_csv(file_name: str, num_of_classes: int = None,
     groups = df.columns.to_series().groupby(df.dtypes).groups
     groups = {str(k): list(v) for k, v in groups.items()}
     numeric_cols = groups.get('int64', []) + groups.get('float64', [])
+    final_cols, normalise = column_converter(numeric_cols)
 
-    data = df[numeric_cols].to_numpy()
+    if len(final_cols) == 0:
+        return None
+
+    data = df[final_cols].to_numpy()
     if normalise:
         data = preprocessing.MinMaxScaler().fit_transform(data)
 
-    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=numeric_cols,
+    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=final_cols,
                    name=os.path.splitext(os.path.basename(file_name))[0])
 
 
@@ -93,7 +96,7 @@ def _deserialize_dataset(dataset: dict) -> Dataset:
     name = dataset['name']
     num_of_classes = dataset['num_of_classes']
     target = None if dataset['target'] is None else np.array(dataset['target'])
-    return _load_from_csv(_dataset_filename(name), num_of_classes, target)
+    return load_from_csv(_dataset_filename(name), num_of_classes, target)
 
 
 def _write_to_json(datasets: [dict]):
@@ -108,9 +111,9 @@ def _read_from_json() -> [dict]:
 
 def add_dataset(dataset: Dataset):
     """
-    This function should be used for datasets created by generators.
-    It creates a csv-file with dataset and record in json, so that this dataset will be included in
+    The function creates a csv-file with dataset and record in json, so that this dataset will be included in
     `load_all_datasets()` during the next launch.
+    Should be called each time you want a dataset to be saved
     """
     _save_to_csv(dataset)
     dump = _read_from_json()
@@ -118,19 +121,6 @@ def add_dataset(dataset: Dataset):
         dump = []
     dump.append(_serialize_dataset(dataset))
     _write_to_json(dump)
-
-
-def add_dataset_from_csv(file_name: str, num_of_classes: int = None,
-                         target: int = None, normalise: bool = True) -> Dataset:
-    """
-    This function should be used for uploading datasets from third-party csv-files.
-    It creates a dataset, saves it in internal csv-file and makes record in json.
-    You should specify either `num_of_classes` or `target` for proper work.
-    :return: resulting dataset
-    """
-    dataset = _load_from_csv(file_name, num_of_classes, target, normalise)
-    add_dataset(dataset)
-    return dataset
 
 
 def delete_dataset(name: str):

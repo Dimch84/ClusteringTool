@@ -19,6 +19,7 @@ class AddAlgoDialog(QDialog):
         self.selected_scores = set()
         self.algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
         self.extra_params: dict = {}
+        self.num_of_clusters = None
 
         self.setWindowTitle("Algorithm settings")
         self.setMinimumSize(600, 800)
