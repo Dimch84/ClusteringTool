@@ -34,22 +34,31 @@ class CentralWidget(QWidget):
         layout.addWidget(self.tab_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
+    def show_error(self, msg: str):
+        error = QErrorMessage(self)
+        error.showMessage(msg)
+        error.exec_()
+
     def __add_tab_to_current_widget(self):
         dataset = self.datasets[self.current_dataset]
         add_algo_dialog = AddAlgoDialog(self)
         if add_algo_dialog.exec() == QDialog.Accepted:
-            res = add_algo_dialog.get_result()
-            algo_name = res.algo_name
-            num_of_clusters = res.num_of_clusters
-            extra_params = res.extra_params
-            selected_scores = res.selected_scores
-            algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
-            pos = self.tab_widget.currentWidget().addTab(
-                AlgoResultsTab(algo=algorithms[algo_name],
-                               dataset=dataset,
-                               params={"k": num_of_clusters} | extra_params,
-                               score_names=selected_scores), algo_name)
-            self.tab_widget.currentWidget().setCurrentIndex(pos)
+            try:
+                res = add_algo_dialog.get_result()
+                algo_name = res.algo_name
+                num_of_clusters = res.num_of_clusters
+                extra_params = res.extra_params
+                selected_scores = res.selected_scores
+                algorithms = {algorithm.name: algorithm for algorithm in load_algorithms()}
+                pos = self.tab_widget.currentWidget().addTab(
+                        AlgoResultsTab(algo=algorithms[algo_name],
+                                       dataset=dataset,
+                                       params={"k": num_of_clusters} | extra_params,
+                                       score_names=selected_scores), algo_name)
+                self.tab_widget.currentWidget().setCurrentIndex(pos)
+            except ValueError as err:
+                self.show_error(str(err))
+                return
 
     def __create_selector(self):
         selector = QComboBox()
