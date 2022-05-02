@@ -13,7 +13,7 @@ class Score:
         self.score_fun = score_fun
         self.needs_target = needs_target
 
-    def calc_score(self, data: np.ndarray = None, target: list[int] = None, pred: list[int] = None):
+    def calc_score(self, data: np.ndarray = None, target: np.ndarray = None, pred: np.ndarray = None):
         if pred is None or (self.needs_target and target is None) or (not self.needs_target and data is None):
             return None
         if self.needs_target:

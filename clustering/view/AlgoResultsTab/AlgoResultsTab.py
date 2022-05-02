@@ -1,7 +1,7 @@
 import numpy as np
 from dataclasses import dataclass
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel
+from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout
 
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
 
@@ -49,6 +49,13 @@ class AlgoResultsTab(QWidget):
 
         layout = QGridLayout()
         layout.addWidget(self.clustering_view, 0, 0, 2, 3)
-        layout.addWidget(self.scores_widget, 0, 3, 1, 1)
-        layout.addWidget(self.parameters_widget, 1, 3, 1, 1)
+        layout.addWidget(self.add_title_to_widget("Scores", self.scores_widget), 0, 3, 1, 1)
+        layout.addWidget(self.add_title_to_widget("Parameters", self.parameters_widget), 1, 3, 1, 1)
         self.setLayout(layout)
+
+    def add_title_to_widget(self, title: str, widget: QWidget):
+        result = QGroupBox(title)
+        layout = QVBoxLayout()
+        layout.addWidget(widget)
+        result.setLayout(layout)
+        return result

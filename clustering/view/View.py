@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGridLayout, QComboBox, \
-    QStackedWidget, QAction, QFileDialog
+    QStackedWidget, QAction, QFileDialog, QErrorMessage, QMessageBox, QSizePolicy
 
 from clustering.model.Model import Model
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoRun
@@ -42,7 +42,7 @@ class CentralWidget(QWidget):
             new_widget.setMovable(True)
             new_widget.setTabsClosable(True)
             new_widget.tabCloseRequested.connect(lambda index, name=dataset_name:
-                                                 self.presenter.remove_algo_run(self.windows[name]["tabs"][index]))
+                                                 self.presenter.remove_algo_run_pushed(self.windows[name]["tabs"][index]))
             self.windows[dataset_name] = {"widget": new_widget, "tabs": list([])}
             self.tab_widget.addWidget(new_widget)
 
@@ -66,8 +66,7 @@ class CentralWidget(QWidget):
 class View(QMainWindow):
     def __init__(self, presenter):
         super().__init__()
-        self.setGeometry(70, 100, 1500, 600)
-
+        self.setGeometry(70, 100, 1600, 900)
         self.presenter = presenter
 
         self.central_widget = CentralWidget(presenter)
@@ -84,6 +83,14 @@ class View(QMainWindow):
                                                       self.presenter.add_algo_pushed))
         library_menu.addAction(self.create_new_action('&Load new dataset', 'Ctrl+Shift+D',
                                                       self.presenter.add_dataset_pushed))
+
+    def show_error(self, msg: str):
+        error = QErrorMessage(self)
+        error.showMessage(msg)
+        error.exec_()
+
+    def show_information(self, msg: str):
+        QMessageBox.information(self, "Info", msg)
 
     def load_from_model(self, model: Model):
         self.central_widget.close()

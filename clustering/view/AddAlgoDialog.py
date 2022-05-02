@@ -2,7 +2,7 @@ from functools import partial
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QComboBox, QLineEdit, QFormLayout, QWidget, QVBoxLayout, \
-    QCheckBox, QSizePolicy
+    QCheckBox, QSizePolicy, QHBoxLayout, QLabel, QGroupBox
 
 
 @dataclass
@@ -27,23 +27,30 @@ class AlgoParamsSetter(QWidget):
 
         for param in algo_attr.int_params:
             line_edit = QLineEdit()
-            line_edit.setPlaceholderText(param.name)
             line_edit.textChanged.connect(partial(self.change_int_param_value, param_name=param.name))
-            layout.addWidget(line_edit)
+            layout.addWidget(self.add_title_to_widget(param.name, line_edit))
 
         for param in algo_attr.selectable_params:
             box = QComboBox()
-            box.setPlaceholderText(param.name)
             box.addItems(param.items)
             box.currentTextChanged.connect(partial(self.change_selectable_param_value, param_name=param.name))
-            layout.addWidget(box)
+            self.change_selectable_param_value(box.currentText(), param.name)
+            layout.addWidget(self.add_title_to_widget(param.name, box))
         self.setLayout(layout)
+
+    def add_title_to_widget(self, title: str, widget: QWidget):
+        result = QWidget()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(title))
+        layout.addWidget(widget)
+        result.setLayout(layout)
+        return result
 
     def change_int_param_value(self, value: str, param_name: str):
         if value.isdecimal():
             self.params |= {param_name: int(value)}
         else:
-            self.params |= {param_name: 0}
+            self.params |= {param_name: None}
 
     def change_selectable_param_value(self, value: str, param_name: str):
         self.params |= {param_name: value}
@@ -91,6 +98,7 @@ class AddAlgoDialog(QDialog):
         self.cur_algo = self.algo_selector.currentData()
 
         self.algo_params_setter = AlgoParamsSetter(self.cur_algo)
+        self.algo_params_titled_setter = self.add_title_to_widget("Parameters", self.algo_params_setter)
 
         self.scores_selector = ScoresSelector(algo_run_dialog_attr.score_attrs)
 
@@ -99,17 +107,27 @@ class AddAlgoDialog(QDialog):
         self.buttonBox.rejected.connect(self.reject)
 
         self.layout = QFormLayout()
-        self.layout.addWidget(self.algo_selector)
-        self.layout.addWidget(self.algo_params_setter)
-        self.layout.addWidget(self.scores_selector)
+        self.layout.addWidget(self.add_title_to_widget("Algorithm", self.algo_selector))
+        self.layout.addWidget(self.algo_params_titled_setter)
+        self.layout.addWidget(self.add_title_to_widget("Scores", self.scores_selector))
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
 
+    def add_title_to_widget(self, title: str, widget: QWidget):
+        result = QGroupBox(title)
+        layout = QVBoxLayout()
+        layout.addWidget(widget)
+        result.setLayout(layout)
+        return result
+
     def change_cur_algo(self, algo_attr):
         new_algo_param_setter = AlgoParamsSetter(algo_attr)
-        self.layout.replaceWidget(self.algo_params_setter, new_algo_param_setter)
+        new_algo_param_titled_setter = self.add_title_to_widget("Parameters", new_algo_param_setter)
+        self.layout.replaceWidget(self.algo_params_titled_setter, new_algo_param_titled_setter)
         self.algo_params_setter.close()
+        self.algo_params_titled_setter.close()
         self.algo_params_setter = new_algo_param_setter
+        self.algo_params_titled_setter = new_algo_param_titled_setter
 
     def get_result(self):
         return AddAlgoDialogResults(

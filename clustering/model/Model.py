@@ -23,6 +23,10 @@ class AlgoRun:
     calculated_scores: dict
 
 
+class DuplicatedAlgoRunError(Exception):
+    pass
+
+
 class Model:
     def __init__(self, datasets: list[Dataset], algorithms: list[Algorithm], scores: list[Score]):
         self.datasets = datasets
@@ -33,11 +37,10 @@ class Model:
 
     def add_algo_run(self, algo_run_attrs: AlgoRunAttrs):
         result = algo_run_attrs.algo.run(algo_run_attrs.dataset.data, algo_run_attrs.params)
-        scores_dict = {score.name: score for score in self.scores}
         calculated_scores = {}
-        for score_name in algo_run_attrs.scores:
-            score = scores_dict[score_name]
-            calculated_scores.update({score_name: score.calc_score(
+        for score in algo_run_attrs.scores:
+            score = score
+            calculated_scores.update({score.name: score.calc_score(
                 data=algo_run_attrs.dataset.data,
                 target=algo_run_attrs.dataset.target,
                 pred=result
@@ -47,8 +50,13 @@ class Model:
             results=result,
             calculated_scores=calculated_scores
         )
+        for x in self.algo_runs:
+            if x.algo_run_attrs.algo.name == algo_run.algo_run_attrs.algo.name and \
+                    x.algo_run_attrs.dataset.name == algo_run.algo_run_attrs.dataset.name and \
+                    x.algo_run_attrs.params == algo_run.algo_run_attrs.params and \
+                    set(x.algo_run_attrs.scores) == set(algo_run.algo_run_attrs.scores):
+                raise DuplicatedAlgoRunError
         self.algo_runs.append(algo_run)
-        # TODO check if item was added
         return algo_run
 
     def remove_algo_run(self, algo_run: AlgoRun):
@@ -63,8 +71,8 @@ class Model:
         return True
 
     def add_dataset(self, dataset: Dataset):
+        add_dataset(dataset)  # able to raise DuplicatedDatasetNameError
         self.datasets.append(dataset)
-        add_dataset(dataset)
         # TODO check if item was added
         return True
 
@@ -95,6 +103,7 @@ class Model:
         if data is None:
             return
 
+        scores_dict = {score.name: score for score in self.scores}
         datasets_dict = {dataset.name: dataset for dataset in self.datasets}
         algorithms_dict = {algo.name: algo for algo in self.algorithms}
 
@@ -107,7 +116,7 @@ class Model:
                         dataset=datasets_dict[dataset_name],
                         algo=algorithms_dict[algo_run["algo_name"]],
                         params=algo_run["params"],
-                        scores=algo_run["calculated_scores"].keys()
+                        scores=list([scores_dict[score_name] for score_name in algo_run["calculated_scores"].keys()])
                     ),
                     results=algo_run["results"],
                     calculated_scores=algo_run["calculated_scores"]
