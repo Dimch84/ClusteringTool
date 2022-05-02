@@ -1,16 +1,6 @@
-from collections.abc import Callable
 import sklearn.metrics as sm
-import numpy as np
-import math
 
-
-class Metric:
-    name: str
-    metric_fun: Callable
-
-    def __init__(self, name: str, metric_fun: Callable):
-        self.name = name
-        self.metric_fun = metric_fun
+from clustering.model.Metric import Metric
 
 
 metrics = [

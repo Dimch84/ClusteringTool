@@ -5,7 +5,7 @@ from clustering.model.Algorithm import AlgoParams
 from clustering.model.Algorithm import IntParam
 from clustering.model.Algorithm import SelectableParam
 
-kmeans = Algorithm(name="K-means",
+vitya = Algorithm(name="Vitya",
                    params=AlgoParams(
                        int_params=[IntParam(name="k", min_bound=2, max_bound=20)],
                        selectable_params=[]
@@ -15,7 +15,7 @@ kmeans = Algorithm(name="K-means",
                        n_clusters=params["k"])
                    .fit(data).labels_)
 
-agglo = Algorithm(name="Agglomerative clustering",
+maxim = Algorithm(name="Maxim",
                   params=AlgoParams(
                       int_params=[IntParam(name="k", min_bound=2, max_bound=20)],
                       selectable_params=[
@@ -31,4 +31,4 @@ agglo = Algorithm(name="Agglomerative clustering",
                   .fit(data).labels_)
 
 # TODO: add other algorithms from sklearn
-algorithms = [kmeans, agglo]
+algorithms = [vitya, maxim]

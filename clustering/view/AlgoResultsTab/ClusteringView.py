@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from PyQt5.QtCore import Qt, QPointF, QRect, pyqtSignal
+from PyQt5.QtCore import Qt, QPointF, QRect
 from PyQt5.QtGui import QColor, QBrush, QPen
 from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsItem, QSizePolicy
 from PyQt5.QtGui import QTransform
@@ -27,8 +27,6 @@ class ScalableGraphicsView(QGraphicsView):
 
 
 class ClusteringView(QWidget):
-    zoom_signal = pyqtSignal(bool)
-
     def __init__(self, points: np.ndarray, pred: np.ndarray):
         super().__init__()
         scene = QGraphicsScene()
@@ -39,11 +37,11 @@ class ClusteringView(QWidget):
         self.graphicView = ScalableGraphicsView(scene, self)
         self.graphicView.setMinimumSize(800, 600)
         self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
-        self.graphicView.setScene(self.__get_scene_with_points())
+        self.graphicView.setScene(self.get_scene_with_points())
 
-    def __get_scene_with_points(self):
+    def get_scene_with_points(self):
         scene = QGraphicsScene()
-        points = self.__resize_points()
+        points = self.resize_points()
         for idx, point in enumerate(points):
             scene.addEllipse(point.x(), point.y(), 10, 10,
                              QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
@@ -51,7 +49,7 @@ class ClusteringView(QWidget):
             ).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 
-    def __resize_points(self):
+    def resize_points(self):
         minW = min(x.x() for x in self.points)
         maxW = max(x.x() for x in self.points)
         minH = min(x.y() for x in self.points)
