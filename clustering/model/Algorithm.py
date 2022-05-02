@@ -2,6 +2,26 @@ from collections.abc import Callable
 import numpy as np
 import os
 import importlib
+from dataclasses import dataclass
+
+
+@dataclass
+class IntParam:
+    name: str
+    min_bound: int
+    max_bound: int
+
+
+@dataclass
+class SelectableParam:
+    name: str
+    items: [str]
+
+
+@dataclass
+class AlgoParams:
+    int_params: [IntParam]
+    selectable_params: [SelectableParam]
 
 
 class Algorithm:
@@ -9,16 +29,15 @@ class Algorithm:
     This class is used to represent an instance of clustering algorithm.
     """
 
-    def __init__(self, name: str, extra_params: dict, run: Callable[[np.ndarray, dict], np.ndarray]):
+    def __init__(self, name: str, params: AlgoParams, run: Callable[[np.ndarray, dict], np.ndarray]):
         """
         :param name: title for algorithm
         :param run: function that implements clustering. It should take exactly two arguments: 2d-array with data
         and the number of classes
         """
         self.name = name
-        self.extra_params = extra_params
+        self.params = params
         self.__run = run
-
 
     # Can't pass Dataset here, because it may contain target
     def run(self, data: np.ndarray, params: dict) -> np.ndarray:

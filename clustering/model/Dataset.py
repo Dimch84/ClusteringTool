@@ -44,7 +44,7 @@ class Dataset:
                f"target = {self.target}\nnum_of_classes = {self.num_of_classes},\nname = {self.name}"
 
 
-class DuplicatedNameError(Exception):
+class DuplicatedDatasetNameError(Exception):
     pass
 
 
@@ -115,7 +115,7 @@ def add_dataset(dataset: Dataset):
     if dump is None:
         dump = []
     if dataset.name in [d['name'] for d in dump]:
-        raise DuplicatedNameError()
+        raise DuplicatedDatasetNameError()
     dump.append(_serialize_dataset(dataset))
     _write_to_json(dump)
 

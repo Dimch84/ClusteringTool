@@ -1,9 +1,8 @@
 from PyQt5.QtWidgets import QApplication
 import sys
 
-from clustering.gui.App import App
+from clustering.presenter.Presenter import Presenter
 
 app = QApplication(sys.argv)
-ex = App()
-ex.show()
+presenter = Presenter()
 sys.exit(app.exec())

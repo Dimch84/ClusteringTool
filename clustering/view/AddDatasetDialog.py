@@ -5,23 +5,23 @@ from dataclasses import dataclass
 @dataclass
 class AddDatasetDialogResults:
     name: str
-    included_cols: [str]
+    included_cols: list[str]
     normalise: bool
 
 
 class AddDatasetDialog(QDialog):
-    def __init__(self, parent, cols, default_name: str = ""):
-        super().__init__(parent)
-        self.cols = cols
+    def __init__(self, columns: list[str]):
+        super().__init__()
+        self.cols = columns
         self.included_cols = set()
         self.normalise = False
-        self.dataset_name = default_name
+        self.dataset_name = None
 
         self.setWindowTitle("Dataset editor")
         self.setMinimumSize(600, 300)
 
         self.layout = QFormLayout()
-        self.layout.addWidget(self.__create_dataset_name_input(default_name))
+        self.layout.addWidget(self.__create_dataset_name_input())
         self.layout.addWidget(self.__create_cols_selector())
         self.layout.addWidget(self.__create_normalise_box())
         self.layout.addWidget(self.__create_button_box())
@@ -34,11 +34,10 @@ class AddDatasetDialog(QDialog):
         buttonBox.rejected.connect(self.reject)
         return buttonBox
 
-    def __create_dataset_name_input(self, default_name: str):
+    def __create_dataset_name_input(self):
         res = QGroupBox("Dataset's name")
         layout = QVBoxLayout()
         num_of_clusters_input = QLineEdit()
-        num_of_clusters_input.setText(default_name)
         num_of_clusters_input.textChanged.connect(self.__change_dataset_name)
         layout.addWidget(num_of_clusters_input)
         res.setLayout(layout)
@@ -69,7 +68,7 @@ class AddDatasetDialog(QDialog):
 
     def get_result(self):
         return AddDatasetDialogResults(
-            self.dataset_name,
-            [column for column in self.cols if column in self.included_cols],
-            self.normalise
+            name=self.dataset_name,
+            included_cols=list([column for column in self.cols if column in self.included_cols]),
+            normalise=self.normalise
         )
