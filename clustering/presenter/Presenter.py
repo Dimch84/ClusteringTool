@@ -128,6 +128,13 @@ class Presenter:
             self.model.add_algorithm(algorithm)
         self.view.show_information(f"Added new algorithms: {', '.join(it.name for it in new_algorithms)}")
 
+    def __add_dataset(self, dataset: Dataset):
+        try:
+            self.model.add_dataset(dataset)
+            self.view.add_dataset(dataset.name)
+        except DuplicatedDatasetNameError:
+            self.view.show_error("Dataset with this name already exists; please, try again with another name")
+
     def add_dataset_pushed(self):
         file = self.view.show_open_file_dialog(
             caption="Load new dataset",
@@ -135,8 +142,12 @@ class Presenter:
         )
         if not file:
             return
+
         df = load_from_csv(file)
         result = self.view.show_add_dataset_dialog(df.columns.tolist())
+        if result is None:
+            return
+
         df = df[result.included_cols]
         data = df.to_numpy()
         if result.normalise:
@@ -148,21 +159,18 @@ class Presenter:
             feature_names=df.columns.tolist(),
             name=result.name
         )
-        try:
-            self.model.add_dataset(dataset)
-            self.view.add_dataset(dataset.name)
-        except DuplicatedDatasetNameError:
-            self.view.show_error("Dataset with this name already exists; please, try again with another name")
+        self.__add_dataset(dataset)
 
     def generate_new_dataset_pushed(self):
         params = self.view.show_generate_dataset_dialog()
+        if params is None:
+            return
         dataset = generate_random_dataset(name=params.name,
                                           n_samples=params.n_samples,
                                           num_of_classes=params.num_of_classes,
                                           n_features=params.n_features,
                                           cluster_std=params.cluster_std)
-        self.model.add_dataset(dataset)
-        self.view.add_dataset(dataset.name)
+        self.__add_dataset(dataset)
 
     def change_cur_dataset(self, dataset_name):
         datasets_dict = {dataset.name: dataset for dataset in self.model.datasets}

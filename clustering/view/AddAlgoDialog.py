@@ -100,15 +100,11 @@ class AddAlgoDialog(QDialog, DialogHelper):
 
         self.scores_selector = ScoresSelector(algo_run_dialog_attr.score_attrs)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
         self.layout = QFormLayout()
         self.layout.addWidget(self.add_title_to_widget("Algorithm", self.algo_selector))
         self.layout.addWidget(self.algo_params_titled_setter)
         self.layout.addWidget(self.add_title_to_widget("Scores", self.scores_selector))
-        self.layout.addWidget(self.buttonBox)
+        self.layout.addWidget(self.create_button_box())
         self.setLayout(self.layout)
 
     def change_cur_algo(self, algo_attr):

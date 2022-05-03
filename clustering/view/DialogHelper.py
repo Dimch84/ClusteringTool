@@ -1,6 +1,6 @@
 from PyQt5.QtGui import QIntValidator, QDoubleValidator, QValidator
 from PyQt5.QtCore import QLocale
-from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLineEdit, QWidget, QHBoxLayout, QLabel
+from PyQt5.QtWidgets import QVBoxLayout, QGroupBox, QLineEdit, QWidget, QHBoxLayout, QLabel, QDialogButtonBox
 
 
 class PositiveIntValidator(QIntValidator):
@@ -27,6 +27,12 @@ class NonNegativeDoubleValidator(QDoubleValidator):
 
 
 class DialogHelper:
+    def create_button_box(self):
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        return buttonBox
+
     @staticmethod
     def add_title_to_widget(title: str, widget: QWidget, set_title_horizontally: bool = False):
         if set_title_horizontally:

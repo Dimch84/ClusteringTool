@@ -127,13 +127,11 @@ class View(QMainWindow):
 
     def show_add_dataset_dialog(self, columns: list[str]):
         add_dataset_dialog = AddDatasetDialog(columns=columns)
-        add_dataset_dialog.exec()
-        return add_dataset_dialog.get_result()
+        return None if not add_dataset_dialog.exec() else add_dataset_dialog.get_result()
 
     def show_generate_dataset_dialog(self):
         gen_dataset_dialog = GenerateDatasetDialog()
-        gen_dataset_dialog.exec()
-        return gen_dataset_dialog.get_result()
+        return None if not gen_dataset_dialog.exec() else gen_dataset_dialog.get_result()
 
     def show_add_algo_run_dialog(self, algo_run_attr):
         return self.central_widget.show_add_algo_run_dialog(algo_run_attr=algo_run_attr)

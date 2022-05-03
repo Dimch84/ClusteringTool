@@ -26,15 +26,8 @@ class AddDatasetDialog(QDialog, DialogHelper):
         self.layout.addWidget(self.__create_dataset_name_input())
         self.layout.addWidget(self.__create_cols_selector())
         self.layout.addWidget(self.__create_normalise_box())
-        self.layout.addWidget(self.__create_button_box())
+        self.layout.addWidget(self.create_button_box())
         self.setLayout(self.layout)
-
-    def __create_button_box(self):
-        QBtn = QDialogButtonBox.Ok
-        buttonBox = QDialogButtonBox(QBtn)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        return buttonBox
 
     def __create_dataset_name_input(self):
         return self.create_named_text_field("Dataset's name", self.__change_dataset_name, self.dataset_name)
