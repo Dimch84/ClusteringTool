@@ -4,6 +4,8 @@ import pandas
 import os
 import json
 
+from sklearn.datasets import make_blobs
+
 
 class Dataset:
     """
@@ -143,3 +145,8 @@ def load_all_datasets() -> [Dataset]:
         except FileNotFoundError:
             delete_dataset(dataset['name'])
     return result
+
+
+def generate_random_dataset(name: str, n_samples: int, num_of_classes: int, n_features: int, cluster_std: float) -> Dataset:
+    data, ans = make_blobs(n_samples=n_samples, centers=num_of_classes, n_features=n_features, cluster_std=cluster_std)
+    return Dataset(data=data, num_of_classes=num_of_classes, target=ans, name=name)

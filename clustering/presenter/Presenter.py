@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import dataclass
 
-from clustering.model.Dataset import load_all_datasets, DuplicatedDatasetNameError
+from clustering.model.Dataset import load_all_datasets, DuplicatedDatasetNameError, generate_random_dataset
 from clustering.algorithms.default_algorithms import algorithms
 from clustering.scores.default_scores import scores
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoRun
@@ -153,6 +153,16 @@ class Presenter:
             self.view.add_dataset(dataset.name)
         except DuplicatedDatasetNameError:
             self.view.show_error("Dataset with this name already exists; please, try again with another name")
+
+    def generate_new_dataset_pushed(self):
+        params = self.view.show_generate_dataset_dialog()
+        dataset = generate_random_dataset(name=params.name,
+                                          n_samples=params.n_samples,
+                                          num_of_classes=params.num_of_classes,
+                                          n_features=params.n_features,
+                                          cluster_std=params.cluster_std)
+        self.model.add_dataset(dataset)
+        self.view.add_dataset(dataset.name)
 
     def change_cur_dataset(self, dataset_name):
         datasets_dict = {dataset.name: dataset for dataset in self.model.datasets}

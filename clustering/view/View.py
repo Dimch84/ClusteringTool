@@ -7,6 +7,7 @@ from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoRun
 from clustering.view.AddAlgoDialog import AddAlgoDialog
 from clustering.view.AddDatasetDialog import AddDatasetDialog
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
+from clustering.view.GenerateDatasetDialog import GenerateDatasetDialog
 
 
 class CentralWidget(QWidget):
@@ -83,6 +84,8 @@ class View(QMainWindow):
                                                       self.presenter.add_algo_pushed))
         library_menu.addAction(self.create_new_action('&Load new dataset', 'Ctrl+Shift+D',
                                                       self.presenter.add_dataset_pushed))
+        library_menu.addAction(self.create_new_action('&Generate new dataset', 'Ctrl+Shift+G',
+                                                      self.presenter.generate_new_dataset_pushed))
 
     def show_error(self, msg: str):
         error = QErrorMessage(self)
@@ -126,6 +129,11 @@ class View(QMainWindow):
         add_dataset_dialog = AddDatasetDialog(columns=columns)
         add_dataset_dialog.exec()
         return add_dataset_dialog.get_result()
+
+    def show_generate_dataset_dialog(self):
+        gen_dataset_dialog = GenerateDatasetDialog()
+        gen_dataset_dialog.exec()
+        return gen_dataset_dialog.get_result()
 
     def show_add_algo_run_dialog(self, algo_run_attr):
         return self.central_widget.show_add_algo_run_dialog(algo_run_attr=algo_run_attr)

@@ -36,11 +36,10 @@ class AddDatasetDialog(QDialog):
 
     def __create_dataset_name_input(self):
         res = QGroupBox("Dataset's name")
-        layout = QVBoxLayout()
-        num_of_clusters_input = QLineEdit()
-        num_of_clusters_input.textChanged.connect(self.__change_dataset_name)
-        layout.addWidget(num_of_clusters_input)
-        res.setLayout(layout)
+        res.setLayout(QVBoxLayout())
+        dataset_name_widget = QLineEdit()
+        dataset_name_widget.textChanged.connect(self.__change_dataset_name)
+        res.layout().addWidget(dataset_name_widget)
         return res
 
     def __change_dataset_name(self, new_name: str):
