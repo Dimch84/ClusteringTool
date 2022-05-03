@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QDialogButtonBox, QLineEdit
+from PyQt5.QtWidgets import QDialog, QFormLayout, QDialogButtonBox
 from dataclasses import dataclass
+
+from clustering.view.DialogHelper import DialogHelper, PositiveIntValidator, NonNegativeDoubleValidator
 
 
 @dataclass
@@ -11,7 +13,7 @@ class GenerateDatasetDialogResults:
     cluster_std: float = 0.2
 
 
-class GenerateDatasetDialog(QDialog):
+class GenerateDatasetDialog(QDialog, DialogHelper):
     def __init__(self):
         super().__init__()
         self.result = GenerateDatasetDialogResults()
@@ -25,22 +27,8 @@ class GenerateDatasetDialog(QDialog):
         self.layout.addWidget(self.__create_numofclasses_input())
         self.layout.addWidget(self.__create_nfeatures_input())
         self.layout.addWidget(self.__create_clusterstd_input())
-        #self.layout.addWidget(self.__create_cols_selector())
-        #self.layout.addWidget(self.__create_normalise_box())
         self.layout.addWidget(self.__create_button_box())
         self.setLayout(self.layout)
-
-    def __create_named_field(self, name: str, widget):
-        res = QGroupBox(name)
-        res.setLayout(QVBoxLayout())
-        res.layout().addWidget(widget)
-        return res
-
-    def __create_named_text_field(self, name: str, default_value, action):
-        res = QLineEdit()
-        res.setText(str(default_value))
-        res.textChanged.connect(action)
-        return self.__create_named_field(name, res)
 
     def __create_button_box(self):
         QBtn = QDialogButtonBox.Ok
@@ -50,24 +38,24 @@ class GenerateDatasetDialog(QDialog):
         return buttonBox
 
     def __create_dataset_name_input(self):
-        return self.__create_named_text_field("Dataset's name", self.result.name,
-                                              self.__change_dataset_name)
+        return self.create_named_text_field("Dataset's name:", self.__change_dataset_name,
+                                            self.result.name, set_title_horizontally=True)
 
     def __create_nsamples_input(self):
-        return self.__create_named_text_field("Number of samples", self.result.n_samples,
-                                              self.__change_nsamples)
+        return self.create_named_text_field("Number of samples:", self.__change_nsamples,
+                                            self.result.n_samples, PositiveIntValidator(), True)
 
     def __create_numofclasses_input(self):
-        return self.__create_named_text_field("Number of clusters", self.result.num_of_classes,
-                                              self.__change_numofclasses)
+        return self.create_named_text_field("Number of clusters:", self.__change_numofclasses,
+                                            self.result.num_of_classes, PositiveIntValidator(), True)
 
     def __create_nfeatures_input(self):
-        return self.__create_named_text_field("Number of features (dimensions)", self.result.n_features,
-                                              self.__change_nfeatures)
+        return self.create_named_text_field("Number of features (dimensions):", self.__change_nfeatures,
+                                            self.result.n_features, PositiveIntValidator(), True)
 
     def __create_clusterstd_input(self):
-        return self.__create_named_text_field("Standard deviation", self.result.cluster_std,
-                                              self.__change_clusterstd)
+        return self.create_named_text_field("Standard deviation:", self.__change_clusterstd,
+                                            self.result.cluster_std, NonNegativeDoubleValidator(), True)
 
     def __change_dataset_name(self, name: str):
         self.result.name = name
