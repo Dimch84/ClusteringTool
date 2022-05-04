@@ -1,36 +1,35 @@
+import uuid
 from functools import partial
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QComboBox, QLineEdit, QFormLayout, QWidget, QVBoxLayout, \
     QCheckBox, QSizePolicy, QHBoxLayout, QLabel, QGroupBox
 
-
-@dataclass
-class AddAlgoDialogResults:
-    algo_name: str
-    params: dict
-    selected_scores: list
+from clustering.presenter.Presenter import Presenter
 
 
 class AlgoSelector(QComboBox):
-    def __init__(self, algo_attrs):
+    def __init__(self, presenter: Presenter, algorithms: [uuid]):
         super().__init__()
-        for algo in algo_attrs:
-            self.addItem(algo.name, algo)
+        for algo_id in algorithms:
+            algo_name = presenter.get_algo_name(algo_id)
+            self.addItem(algo_name, algo_id)
 
 
 class AlgoParamsSetter(QWidget):
-    def __init__(self, algo_attr):
+    def __init__(self, presenter: Presenter, algo_id: uuid):
         super().__init__()
         self.params: dict = {}
         layout = QVBoxLayout()
 
-        for param in algo_attr.int_params:
+        algo_params = presenter.get_algo_params(algo_id)
+
+        for param in algo_params.int_params:
             line_edit = QLineEdit()
             line_edit.textChanged.connect(partial(self.change_int_param_value, param_name=param.name))
             layout.addWidget(self.add_title_to_widget(param.name, line_edit))
 
-        for param in algo_attr.selectable_params:
+        for param in algo_params.selectable_params:
             box = QComboBox()
             box.addItems(param.items)
             box.currentTextChanged.connect(partial(self.change_selectable_param_value, param_name=param.name))
@@ -60,47 +59,50 @@ class AlgoParamsSetter(QWidget):
 
 
 class ScoresSelector(QWidget):
-    def __init__(self, scores: [str]):
+    def __init__(self, presenter: Presenter, score_ids: [uuid]):
         super().__init__()
-        self.selected_scores = list([])
+        self.selected_scores: list[uuid] = []
 
         layout = QVBoxLayout()
-        for score in scores:
-            checkBox = QCheckBox(score.name)
-            checkBox.stateChanged.connect(partial(self.change_score_state, score_name=score.name))
+        for score_id in score_ids:
+            score_name = presenter.get_score_name(score_id)
+            checkBox = QCheckBox(score_name)
+            checkBox.stateChanged.connect(partial(self.change_score_state, score_id=score_id))
             layout.addWidget(checkBox)
         self.setLayout(layout)
 
-    def change_score_state(self, checked: bool, score_name: str):
+    def change_score_state(self, checked: bool, score_id: uuid):
         if checked:
-            self.selected_scores.append(score_name)
+            self.selected_scores.append(score_id)
         else:
-            self.selected_scores.remove(score_name)
+            self.selected_scores.remove(score_id)
 
     def get_selected_scores(self):
         return self.selected_scores
 
 
-class AddAlgoDialog(QDialog):
-    def __init__(self, algo_run_dialog_attr):
+class AddAlgoRunDialog(QDialog):
+    @dataclass
+    class AddAlgoDialogResult:
+        algo_id: uuid
+        params: dict
+        score_ids: list[uuid]
+
+    def __init__(self, presenter: Presenter, algo_ids: [uuid], score_ids: [uuid]):
         super().__init__()
         self.setWindowTitle("Algorithm settings")
         self.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
         self.setMinimumSize(600, 0)
 
-        self.algo_run_dialog_attr = algo_run_dialog_attr
+        self.presenter = presenter
 
-        self.algo_selector = AlgoSelector(algo_run_dialog_attr.algo_attrs)
-        self.algo_selector.currentIndexChanged.connect(
-            lambda idx: self.change_cur_algo(self.algo_selector.itemData(idx))
-        )
+        self.algo_selector = AlgoSelector(presenter, algo_ids)
+        self.algo_selector.currentIndexChanged.connect(self.change_cur_algo_listener)
 
-        self.cur_algo = self.algo_selector.currentData()
-
-        self.algo_params_setter = AlgoParamsSetter(self.cur_algo)
+        self.algo_params_setter = AlgoParamsSetter(presenter, self.algo_selector.currentData())
         self.algo_params_titled_setter = self.add_title_to_widget("Parameters", self.algo_params_setter)
 
-        self.scores_selector = ScoresSelector(algo_run_dialog_attr.score_attrs)
+        self.scores_selector = ScoresSelector(presenter, score_ids)
 
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.buttonBox.accepted.connect(self.accept)
@@ -113,25 +115,29 @@ class AddAlgoDialog(QDialog):
         self.layout.addWidget(self.buttonBox)
         self.setLayout(self.layout)
 
-    def add_title_to_widget(self, title: str, widget: QWidget):
+    @staticmethod
+    def add_title_to_widget(title: str, widget: QWidget):
         result = QGroupBox(title)
         layout = QVBoxLayout()
         layout.addWidget(widget)
         result.setLayout(layout)
         return result
 
-    def change_cur_algo(self, algo_attr):
-        new_algo_param_setter = AlgoParamsSetter(algo_attr)
+    def change_cur_algo_listener(self, index: int):
+        self.change_cur_algo(self.algo_selector.itemData(index))
+
+    def change_cur_algo(self, algo_id: uuid):
+        new_algo_param_setter = AlgoParamsSetter(self.presenter, algo_id)
         new_algo_param_titled_setter = self.add_title_to_widget("Parameters", new_algo_param_setter)
-        self.layout.replaceWidget(self.algo_params_titled_setter, new_algo_param_titled_setter)
-        self.algo_params_setter.close()
-        self.algo_params_titled_setter.close()
+        if self.algo_params_titled_setter is not None:
+            self.layout.replaceWidget(self.algo_params_titled_setter, new_algo_param_titled_setter)
+            self.algo_params_setter.close()
+            self.algo_params_titled_setter.close()
         self.algo_params_setter = new_algo_param_setter
         self.algo_params_titled_setter = new_algo_param_titled_setter
 
     def get_result(self):
-        return AddAlgoDialogResults(
-            algo_name=self.algo_selector.currentText(),
+        return self.AddAlgoDialogResult(
+            algo_id=self.algo_selector.currentData(),
             params=self.algo_params_setter.get_params(),
-            selected_scores=self.scores_selector.get_selected_scores()
-        )
+            score_ids=self.scores_selector.get_selected_scores())

@@ -1,19 +1,9 @@
-import numpy as np
-from dataclasses import dataclass
+import uuid
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout
 
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
-
-
-@dataclass
-class AlgoRun:
-    algo_name: str
-    dataset_name: str
-    data: np.ndarray
-    results: np.ndarray
-    params: dict
-    calculated_scores: dict
+from clustering.presenter.Presenter import Presenter
 
 
 class ParametersWidget(QWidget):
@@ -28,25 +18,28 @@ class ParametersWidget(QWidget):
 
 
 class ScoresWidget(QWidget):
-    def __init__(self, calculated_scores: dict):
+    def __init__(self, scores: dict):
         super().__init__()
         self.setMinimumSize(400, 300)
         layout = QFormLayout(self)
         layout.setVerticalSpacing(20)
         layout.setHorizontalSpacing(50)
-        for score_name in calculated_scores.keys():
-            layout.addRow(QLabel(f"{score_name}: "), QLabel(str(calculated_scores[score_name])))
+        for score_name in scores.keys():
+            layout.addRow(QLabel(f"{score_name}: "), QLabel(str(scores[score_name])))
 
 
 class AlgoResultsTab(QWidget):
-    def __init__(self, algo_run: AlgoRun):
+    def __init__(self, presenter: Presenter, algo_run_id: uuid):
         super().__init__()
-        self.algo_run = algo_run
 
-        self.parameters_widget = ParametersWidget(algo_run.params)
-        self.scores_widget = ScoresWidget(algo_run.calculated_scores)
-        self.clustering_view = ClusteringView(algo_run.data, algo_run.results)
-
+        algo_run_results = presenter.get_algo_run_results(algo_run_id)
+        dataset_id = algo_run_results.config.dataset_id
+        self.parameters_widget = ParametersWidget(algo_run_results.config.params)
+        self.scores_widget = ScoresWidget(algo_run_results.scores)
+        self.clustering_view = ClusteringView(
+            points=presenter.get_dataset_points(dataset_id),
+            pred=algo_run_results.pred
+        )
         layout = QGridLayout()
         layout.addWidget(self.clustering_view, 0, 0, 2, 3)
         layout.addWidget(self.add_title_to_widget("Scores", self.scores_widget), 0, 3, 1, 1)
