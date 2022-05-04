@@ -2,8 +2,11 @@ import uuid
 from functools import partial
 from dataclasses import dataclass
 
-from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QComboBox, QLineEdit, QFormLayout, QWidget, QVBoxLayout, \
-    QCheckBox, QSizePolicy, QHBoxLayout, QLabel, QGroupBox
+from PyQt5.QtGui import QIntValidator
+from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QComboBox, QFormLayout, QWidget, QVBoxLayout, \
+    QCheckBox, QSizePolicy
+
+from clustering.view.DialogHelper import DialogHelper
 
 from clustering.presenter.Presenter import Presenter
 
@@ -16,7 +19,7 @@ class AlgoSelector(QComboBox):
             self.addItem(algo_name, algo_id)
 
 
-class AlgoParamsSetter(QWidget):
+class AlgoParamsSetter(QWidget, DialogHelper):
     def __init__(self, presenter: Presenter, algo_id: uuid):
         super().__init__()
         self.params: dict = {}
@@ -25,9 +28,12 @@ class AlgoParamsSetter(QWidget):
         algo_params = presenter.get_algo_params(algo_id)
 
         for param in algo_params.int_params:
-            line_edit = QLineEdit()
-            line_edit.textChanged.connect(partial(self.change_int_param_value, param_name=param.name))
-            layout.addWidget(self.add_title_to_widget(param.name, line_edit))
+            line_edit = self.create_named_text_field(param.name,
+                                                     partial(self.change_int_param_value, param_name=param.name),
+                                                     validator=QIntValidator(),
+                                                     set_title_horizontally=True
+                                                     )
+            layout.addWidget(line_edit)
 
         for param in algo_params.selectable_params:
             box = QComboBox()
@@ -36,14 +42,6 @@ class AlgoParamsSetter(QWidget):
             self.change_selectable_param_value(box.currentText(), param.name)
             layout.addWidget(self.add_title_to_widget(param.name, box))
         self.setLayout(layout)
-
-    def add_title_to_widget(self, title: str, widget: QWidget):
-        result = QWidget()
-        layout = QHBoxLayout()
-        layout.addWidget(QLabel(title))
-        layout.addWidget(widget)
-        result.setLayout(layout)
-        return result
 
     def change_int_param_value(self, value: str, param_name: str):
         if value.isdecimal():
@@ -81,7 +79,7 @@ class ScoresSelector(QWidget):
         return self.selected_scores
 
 
-class AddAlgoRunDialog(QDialog):
+class AddAlgoRunDialog(QDialog, DialogHelper):
     @dataclass
     class AddAlgoDialogResult:
         algo_id: uuid
@@ -104,24 +102,12 @@ class AddAlgoRunDialog(QDialog):
 
         self.scores_selector = ScoresSelector(presenter, score_ids)
 
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
         self.layout = QFormLayout()
         self.layout.addWidget(self.add_title_to_widget("Algorithm", self.algo_selector))
         self.layout.addWidget(self.algo_params_titled_setter)
         self.layout.addWidget(self.add_title_to_widget("Scores", self.scores_selector))
-        self.layout.addWidget(self.buttonBox)
+        self.layout.addWidget(self.create_button_box())
         self.setLayout(self.layout)
-
-    @staticmethod
-    def add_title_to_widget(title: str, widget: QWidget):
-        result = QGroupBox(title)
-        layout = QVBoxLayout()
-        layout.addWidget(widget)
-        result.setLayout(layout)
-        return result
 
     def change_cur_algo_listener(self, index: int):
         self.change_cur_algo(self.algo_selector.itemData(index))

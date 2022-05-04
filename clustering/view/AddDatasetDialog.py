@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QDialogButtonBox, QLineEdit
 from dataclasses import dataclass
 
+from clustering.view.DialogHelper import DialogHelper
+
 
 @dataclass
 class AddDatasetDialogResults:
@@ -9,13 +11,13 @@ class AddDatasetDialogResults:
     normalise: bool
 
 
-class AddDatasetDialog(QDialog):
+class AddDatasetDialog(QDialog, DialogHelper):
     def __init__(self, columns: list[str]):
         super().__init__()
         self.cols = columns
         self.included_cols = set()
         self.normalise = False
-        self.dataset_name = None
+        self.dataset_name = "Unnamed"
 
         self.setWindowTitle("Dataset editor")
         self.setMinimumSize(600, 300)
@@ -24,24 +26,11 @@ class AddDatasetDialog(QDialog):
         self.layout.addWidget(self.__create_dataset_name_input())
         self.layout.addWidget(self.__create_cols_selector())
         self.layout.addWidget(self.__create_normalise_box())
-        self.layout.addWidget(self.__create_button_box())
+        self.layout.addWidget(self.create_button_box())
         self.setLayout(self.layout)
 
-    def __create_button_box(self):
-        QBtn = QDialogButtonBox.Ok
-        buttonBox = QDialogButtonBox(QBtn)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        return buttonBox
-
     def __create_dataset_name_input(self):
-        res = QGroupBox("Dataset's name")
-        layout = QVBoxLayout()
-        num_of_clusters_input = QLineEdit()
-        num_of_clusters_input.textChanged.connect(self.__change_dataset_name)
-        layout.addWidget(num_of_clusters_input)
-        res.setLayout(layout)
-        return res
+        return self.create_named_text_field("Dataset's name", self.__change_dataset_name, self.dataset_name)
 
     def __change_dataset_name(self, new_name: str):
         self.dataset_name = new_name

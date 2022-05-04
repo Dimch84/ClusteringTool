@@ -2,9 +2,9 @@ import os
 import shutil
 import uuid
 
-from clustering.model.Algorithm import load_algorithms_from_module, load_algorithms
-from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset
 from clustering.model.Model import AlgoRunConfig
+from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
+from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
 
 
@@ -91,23 +91,42 @@ class Presenter:
             self.view.show_error(f"Variable 'algorithms' was not found in file!")
             return
 
+    def __add_dataset(self, dataset: Dataset):
+        try:
+            add_dataset(dataset)
+            dataset_id = self.model.add_dataset(dataset)
+            self.model.add_dataset(dataset)
+            self.view.add_dataset(dataset_id)
+        except DuplicatedDatasetNameError:
+            self.view.show_error("Dataset with this name already exists; please, try again with another name")
+
     def add_dataset_pushed(self):
         file = self.view.show_open_file_dialog("Load new dataset", "*.csv")
         if not file:
             return
+
         df = load_from_csv(file)
         result = self.view.show_add_dataset_dialog(df.columns.tolist())
+        if result is None:
+            return
+
         df = df[result.included_cols]
         data = df.to_numpy()
         if result.normalise:
             data = normalise_dataset(data)
         dataset = Dataset(data, None, None, df.columns.tolist(), result.name)
-        try:
-            add_dataset(dataset)
-            dataset_id = self.model.add_dataset(dataset)
-            self.view.add_dataset(dataset_id)
-        except DuplicatedDatasetNameError:
-            self.view.show_error("Dataset with this name already exists; please, try again with another name")
+        self.__add_dataset(dataset)
+
+    def generate_new_dataset_pushed(self):
+        params = self.view.show_generate_dataset_dialog()
+        if params is None:
+            return
+        dataset = generate_random_dataset(name=params.name,
+                                          n_samples=params.n_samples,
+                                          num_of_classes=params.num_of_classes,
+                                          n_features=params.n_features,
+                                          cluster_std=params.cluster_std)
+        self.__add_dataset(dataset)
 
     def change_cur_dataset(self, dataset_id):
         self.view.change_cur_dataset(dataset_id)

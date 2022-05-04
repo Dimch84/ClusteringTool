@@ -11,6 +11,7 @@ from clustering.view.AddAlgoRunDialog import AddAlgoRunDialog
 from clustering.view.AddDatasetDialog import AddDatasetDialog
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
 from clustering.presenter.Presenter import Presenter
+from clustering.view.GenerateDatasetDialog import GenerateDatasetDialog
 
 
 class CentralWidget(QWidget):
@@ -96,8 +97,12 @@ class View(QMainWindow):
         file_menu.addAction(self.create_new_action('&Load session', 'Ctrl+O', presenter.load_session_pushed))
         file_menu.addAction(self.create_new_action('&New session', 'Ctrl+N', presenter.new_session_pushed))
         library_menu = menu_bar.addMenu('&Library')
-        library_menu.addAction(self.create_new_action('&Load new algorithm', 'Ctrl+Shift+A', presenter.add_algo_pushed))
-        library_menu.addAction(self.create_new_action('&Load new dataset', 'Ctrl+Shift+D', presenter.add_dataset_pushed))
+        library_menu.addAction(self.create_new_action('&Load new algorithm', 'Ctrl+Shift+A',
+                                                      self.presenter.add_algo_pushed))
+        library_menu.addAction(self.create_new_action('&Load new dataset', 'Ctrl+Shift+D',
+                                                      self.presenter.add_dataset_pushed))
+        library_menu.addAction(self.create_new_action('&Generate new dataset', 'Ctrl+Shift+G',
+                                                      self.presenter.generate_new_dataset_pushed))
 
     def show_error(self, msg: str):
         error = QErrorMessage(self)
@@ -136,9 +141,12 @@ class View(QMainWindow):
         return QFileDialog.getOpenFileName(self, caption, filter)[0]
 
     def show_add_dataset_dialog(self, columns: list[str]):
-        add_dataset_dialog = AddDatasetDialog(columns)
-        add_dataset_dialog.exec()
-        return add_dataset_dialog.get_result()
+        add_dataset_dialog = AddDatasetDialog(columns=columns)
+        return None if not add_dataset_dialog.exec() else add_dataset_dialog.get_result()
+
+    def show_generate_dataset_dialog(self):
+        gen_dataset_dialog = GenerateDatasetDialog()
+        return None if not gen_dataset_dialog.exec() else gen_dataset_dialog.get_result()
 
     def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]):
         return self.central_widget.show_add_algo_run_dialog(algo_ids, score_ids)
