@@ -88,7 +88,8 @@ class Presenter:
                 data=self.model.current_dataset.data,
                 results=algo_run.results,
                 params=algo_run.algo_run_attrs.params,
-                calculated_scores=algo_run.calculated_scores
+                calculated_scores=algo_run.calculated_scores,
+                dataset=algo_run.algo_run_attrs.dataset
             ))
         except DuplicatedAlgoRunError:
             self.view.show_error(str("Algorithm with such parameters has already been launched"))

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout
 
+from clustering.model.Dataset import Dataset
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
 
 
@@ -14,6 +15,7 @@ class AlgoRun:
     results: np.ndarray
     params: dict
     calculated_scores: dict
+    dataset: Dataset
 
 
 class ParametersWidget(QWidget):
@@ -45,7 +47,7 @@ class AlgoResultsTab(QWidget):
 
         self.parameters_widget = ParametersWidget(algo_run.params)
         self.scores_widget = ScoresWidget(algo_run.calculated_scores)
-        self.clustering_view = ClusteringView(algo_run.data, algo_run.results)
+        self.clustering_view = ClusteringView(algo_run.data, algo_run.results, algo_run.dataset)
 
         layout = QGridLayout()
         layout.addWidget(self.clustering_view, 0, 0, 2, 3)

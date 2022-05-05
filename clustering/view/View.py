@@ -109,7 +109,8 @@ class View(QMainWindow):
                 data=algo_run.algo_run_attrs.dataset.data,
                 results=algo_run.results,
                 params=algo_run.algo_run_attrs.params,
-                calculated_scores=algo_run.calculated_scores
+                calculated_scores=algo_run.calculated_scores,
+                dataset=algo_run.algo_run_attrs.dataset
             ))
 
     def add_dataset(self, dataset_name: str):
