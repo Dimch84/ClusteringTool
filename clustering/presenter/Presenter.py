@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 
-from clustering.model.Model import AlgoRunConfig
+from clustering.model.Model import AlgoRunConfig, AlgoRunResults
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
@@ -41,6 +41,22 @@ class Presenter:
     def get_dataset_points(self, dataset_id: uuid):
         return self.model.datasets[dataset_id].data
 
+    def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
+        try:
+            prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
+            next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
+                dataset_id=prev_results.config.dataset_id,
+                algorithm_id=prev_results.config.algorithm_id,
+                params=params,
+                score_ids=prev_results.config.score_ids
+            ))
+            self.model.remove_algo_run_results(algo_run_id)
+            self.view.change_algo_run_results(algo_run_id, next_algo_run_id)
+        except KeyError:
+            self.view.show_error(str("Some parameters weren't configured"))
+        except ValueError:
+            self.view.show_error(str("Invalid parameters"))
+
     def add_algo_run_pushed(self):
         result = self.view.show_add_algo_run_dialog(
             algo_ids=self.model.algorithms.keys(),
@@ -49,12 +65,7 @@ class Presenter:
         if result is None:
             return
         try:
-            algo_run_id = self.model.add_algo_run(AlgoRunConfig(
-                dataset_id=result.dataset_id,
-                algorithm_id=result.algo_id,
-                params=result.params,
-                score_ids=result.score_ids
-            ))
+            algo_run_id = self.model.add_algo_run(result)
             self.view.add_algo_run_results(algo_run_id)
         except KeyError:
             self.view.show_error(str("Some parameters weren't configured"))

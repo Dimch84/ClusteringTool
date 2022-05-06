@@ -35,6 +35,7 @@ class ClusteringView(QWidget):
         self.points = list(map(lambda point: QPointF(point[0], point[1]), points))
         self.pred = pred
         self.graphicView = ScalableGraphicsView(scene, self)
+        self.setMinimumSize(800, 600)
         self.graphicView.setMinimumSize(800, 600)
         self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
         self.graphicView.setScene(self.get_scene_with_points())
