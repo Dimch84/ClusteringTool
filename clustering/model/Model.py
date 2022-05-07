@@ -19,6 +19,7 @@ class AlgoRunConfig:
 
 @dataclass()
 class AlgoRunResults:
+    name: str
     config: AlgoRunConfig
     pred: np.ndarray
     scores: dict
@@ -37,21 +38,13 @@ class Model:
         }
         self.algo_run_results: dict[uuid, AlgoRunResults] = {}
 
-    def add_algo_run(self, config: AlgoRunConfig):
+    def add_algo_run(self, name: str, config: AlgoRunConfig):
         dataset = self.datasets[config.dataset_id]
         algorithm = self.algorithms[config.algorithm_id]
         pred = algorithm.run(dataset.data, config.params)
-        scores = self.calc_scores(
-            pred=pred,
-            dataset=dataset,
-            scores=[self.scores[score_id] for score_id in config.score_ids]
-        )
+        scores = self.calc_scores(pred, dataset, [self.scores[score_id] for score_id in config.score_ids])
         algo_run_result_id = uuid.uuid4()
-        algo_run_result = AlgoRunResults(
-            config=config,
-            pred=pred,
-            scores=scores
-        )
+        algo_run_result = AlgoRunResults(name, config, pred, scores)
         self.algo_run_results[algo_run_result_id] = algo_run_result
         return algo_run_result_id
 
@@ -94,6 +87,7 @@ class Model:
             if dataset_name not in data.keys():
                 data[dataset_name] = []
             data[dataset_name].append({
+                "run_name": algo_run.name,
                 "algo_name": algo_name,
                 "params": algo_run.config.params,
                 "scores": algo_run.scores,
@@ -118,6 +112,7 @@ class Model:
             for algo_run in data[dataset_name]:
                 algo_run_result_id = uuid.uuid4()
                 self.algo_run_results[algo_run_result_id] = AlgoRunResults(
+                    name=algo_run["run_name"],
                     config=AlgoRunConfig(
                         dataset_id=datasets_dict[dataset_name],
                         algorithm_id=algorithms_dict[algo_run["algo_name"]],

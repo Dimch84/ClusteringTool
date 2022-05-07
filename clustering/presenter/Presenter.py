@@ -44,17 +44,20 @@ class Presenter:
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
-            next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
-                dataset_id=prev_results.config.dataset_id,
-                algorithm_id=prev_results.config.algorithm_id,
-                params=params,
-                score_ids=prev_results.config.score_ids
-            ))
+            next_algo_run_id = self.model.add_algo_run(
+                name=prev_results.name,
+                config=AlgoRunConfig(
+                    dataset_id=prev_results.config.dataset_id,
+                    algorithm_id=prev_results.config.algorithm_id,
+                    params=params,
+                    score_ids=prev_results.config.score_ids
+                )
+            )
             self.model.remove_algo_run_results(algo_run_id)
             self.view.change_algo_run_results(algo_run_id, next_algo_run_id)
         except KeyError:
             self.view.show_error(str("Some parameters weren't configured"))
-        except ValueError:
+        except (ValueError, TypeError, OverflowError):
             self.view.show_error(str("Invalid parameters"))
 
     def add_algo_run_pushed(self):
@@ -65,11 +68,11 @@ class Presenter:
         if result is None:
             return
         try:
-            algo_run_id = self.model.add_algo_run(result)
+            algo_run_id = self.model.add_algo_run(result.name, result.config)
             self.view.add_algo_run_results(algo_run_id)
         except KeyError:
             self.view.show_error(str("Some parameters weren't configured"))
-        except ValueError:
+        except (ValueError, TypeError, OverflowError):
             self.view.show_error(str("Invalid parameters"))
 
     def remove_algo_run_pushed(self, algorithm_id: uuid):
@@ -90,7 +93,6 @@ class Presenter:
             new_algo_names = set([algo.name for algo in new_algos])
             if all_saved_algo_names.intersection(new_algo_names):
                 raise DuplicatedAlgoNameError
-
             for algorithm in new_algos:
                 self.model.add_algorithm(algorithm)
             self.view.show_information(f"Added new algorithms: {', '.join(it.name for it in new_algos)}")
@@ -100,7 +102,6 @@ class Presenter:
         except AttributeError:
             os.remove(new_file)
             self.view.show_error(f"Variable 'algorithms' was not found in file!")
-            return
 
     def __add_dataset(self, dataset: Dataset):
         try:
@@ -150,7 +151,6 @@ class Presenter:
         file = self.view.show_open_file_dialog("Load session", "*.ini")
         if not file:
             return
-
         self.model.save()
         self.model.algo_run_results.clear()
         self.model.load(file)

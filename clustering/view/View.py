@@ -14,6 +14,12 @@ from clustering.presenter.Presenter import Presenter
 from clustering.view.GenerateDatasetDialog import GenerateDatasetDialog
 
 
+@dataclass
+class AddAlgoDialogResult:
+    name: str
+    config: AlgoRunConfig
+
+
 class CentralWidget(QWidget):
     def __init__(self, presenter: Presenter):
         super().__init__()
@@ -37,11 +43,15 @@ class CentralWidget(QWidget):
         add_algo_dialog = AddAlgoRunDialog(self.presenter, algo_ids, score_ids)
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
-            return AlgoRunConfig(
-                dataset_id=self.dataset_selector.currentData(),
-                algorithm_id=result.algo_id,
-                params=result.params,
-                score_ids=result.score_ids)
+            return AddAlgoDialogResult(
+                name=result.name,
+                config=AlgoRunConfig(
+                    dataset_id=self.dataset_selector.currentData(),
+                    algorithm_id=result.algo_id,
+                    params=result.params,
+                    score_ids=result.score_ids
+                )
+            )
         else:
             return None
 
@@ -68,12 +78,9 @@ class CentralWidget(QWidget):
 
     def add_results_tab(self, algo_run_id: uuid):
         results = self.presenter.get_algo_run_results(algo_run_id)
-        algo_name = self.presenter.get_algo_name(results.config.algorithm_id)
-        dataset_id = results.config.dataset_id
-
         tab = AlgoResultsTab(self.presenter, algo_run_id)
-        self.windows[dataset_id]["widget"].addTab(tab, algo_name)
-        self.windows[dataset_id]["tab_ids"].append(algo_run_id)
+        self.windows[results.config.dataset_id]["widget"].addTab(tab, results.name)
+        self.windows[results.config.dataset_id]["tab_ids"].append(algo_run_id)
 
     def remove_results_tab(self, algo_run_id: uuid):
         for dataset_id in self.windows.keys():
@@ -85,16 +92,13 @@ class CentralWidget(QWidget):
     def change_algo_run_results_tab(self, algo_run_id: uuid, next_algo_run_id: uuid):
         results = self.presenter.get_algo_run_results(next_algo_run_id)
         dataset_id = results.config.dataset_id
-        algo_name = self.presenter.get_algo_name(results.config.algorithm_id)
-
         index = self.windows[dataset_id]["tab_ids"].index(algo_run_id)
-        tab = AlgoResultsTab(self.presenter, next_algo_run_id)
-
-        tmp = self.windows[dataset_id]["widget"].currentIndex()
+        next_tab = AlgoResultsTab(self.presenter, next_algo_run_id)
+        prev_index = self.windows[dataset_id]["widget"].currentIndex()
         self.windows[dataset_id]["widget"].removeTab(index)
-        self.windows[dataset_id]["widget"].insertTab(index, tab, algo_name)
+        self.windows[dataset_id]["widget"].insertTab(index, next_tab, results.name)
         self.windows[dataset_id]["tab_ids"][index] = next_algo_run_id
-        self.windows[dataset_id]["widget"].setCurrentIndex(tmp)
+        self.windows[dataset_id]["widget"].setCurrentIndex(prev_index)
 
 
 class View(QMainWindow):
@@ -130,7 +134,6 @@ class View(QMainWindow):
         self.central_widget.close()
         self.central_widget = CentralWidget(self.presenter)
         self.setCentralWidget(self.central_widget)
-
         for dataset_id in model.datasets.keys():
             self.add_dataset(dataset_id)
         for algo_run_result in model.algo_run_results:

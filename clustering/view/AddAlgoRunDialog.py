@@ -3,7 +3,7 @@ from functools import partial
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QDialog, QComboBox, QFormLayout, QWidget, QVBoxLayout, \
-    QCheckBox, QSizePolicy
+    QCheckBox, QSizePolicy, QLineEdit
 
 from clustering.model.Algorithm import AlgoParams
 from clustering.model.Model import AlgoRunConfig
@@ -46,6 +46,7 @@ class ScoresSelector(QWidget):
 class AddAlgoRunDialog(QDialog, DialogHelper):
     @dataclass
     class AddAlgoDialogResult:
+        name: str
         algo_id: uuid
         params: dict
         score_ids: list[uuid]
@@ -57,17 +58,15 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
         self.setMinimumSize(600, 0)
 
         self.presenter = presenter
-
+        self.name_input = QLineEdit("")
         self.algo_selector = AlgoSelector(presenter, algo_ids)
         self.algo_selector.currentIndexChanged.connect(self.change_cur_algo_listener)
-
         self.algo_params_setter = self.__create_param_setter(self.algo_selector.currentData())
-
         self.algo_params_titled_setter = self.add_title_to_widget("Parameters", self.algo_params_setter)
-
         self.scores_selector = ScoresSelector(presenter, score_ids)
 
         self.layout = QFormLayout()
+        self.layout.addWidget(self.add_title_to_widget("Name", self.name_input))
         self.layout.addWidget(self.add_title_to_widget("Algorithm", self.algo_selector))
         self.layout.addWidget(self.algo_params_titled_setter)
         self.layout.addWidget(self.add_title_to_widget("Scores", self.scores_selector))
@@ -97,6 +96,7 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
 
     def get_result(self):
         return self.AddAlgoDialogResult(
+            name=self.name_input.text(),
             algo_id=self.algo_selector.currentData(),
             params=self.algo_params_setter.get_params(),
             score_ids=self.scores_selector.get_selected_scores())
