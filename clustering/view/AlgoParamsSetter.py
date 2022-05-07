@@ -1,4 +1,3 @@
-import uuid
 from copy import copy
 from dataclasses import dataclass
 from functools import partial
@@ -7,9 +6,7 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QComboBox, QWidget, QVBoxLayout
 
 from clustering.model.Algorithm import AlgoParams
-from clustering.model.Model import AlgoRunConfig
 from clustering.view.DialogHelper import DialogHelper
-from clustering.presenter.Presenter import Presenter
 
 
 @dataclass

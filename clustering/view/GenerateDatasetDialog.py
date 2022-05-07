@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QFormLayout, QDialogButtonBox
+from PyQt5.QtWidgets import QDialog, QFormLayout, QWidget
 from dataclasses import dataclass
 
 from clustering.view.DialogHelper import DialogHelper, PositiveIntValidator, NonNegativeDoubleValidator
@@ -14,8 +14,8 @@ class GenerateDatasetDialogResults:
 
 
 class GenerateDatasetDialog(QDialog, DialogHelper):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QWidget):
+        super().__init__(parent)
         self.result = GenerateDatasetDialogResults()
 
         self.setWindowTitle("Dataset editor")

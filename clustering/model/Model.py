@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from PyQt5.QtCore import QSettings
 
 from clustering.model.Algorithm import Algorithm
-from clustering.model.Dataset import Dataset, add_dataset
+from clustering.model.Dataset import Dataset
 from clustering.model.Score import Score
 
 

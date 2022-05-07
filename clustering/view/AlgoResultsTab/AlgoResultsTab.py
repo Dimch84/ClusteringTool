@@ -37,11 +37,13 @@ class AlgoResultsTab(QWidget):
         )
         self.rerun_button = QPushButton("Rerun algorithm")
         self.rerun_button.clicked.connect(self.rerun_algo_button_listener)
-
+        self.export_button = QPushButton("Export to csv")
+        self.export_button.clicked.connect(self.export_results_button_listener)
         layout = QGridLayout()
-        layout.addWidget(self.add_title_to_widget("Clustering", self.clustering_view), 0, 0, 3, 3)
+        layout.addWidget(self.add_title_to_widget("Clustering", self.clustering_view), 0, 0, 2, 3)
         layout.addWidget(self.add_title_to_widget("Scores", self.scores_widget), 0, 3, 1, 1)
         layout.addWidget(self.add_title_to_widget("Parameters", self.parameters_widget), 1, 3, 1, 1)
+        layout.addWidget(self.export_button, 2, 0, 1, 3)
         layout.addWidget(self.rerun_button, 2, 3, 1, 1)
         self.setLayout(layout)
 
@@ -50,6 +52,9 @@ class AlgoResultsTab(QWidget):
             algo_run_id=self.algo_run_id,
             params=self.parameters_widget.get_params()
         )
+
+    def export_results_button_listener(self):
+        self.presenter.export_algo_run_results(self.algo_run_id)
 
     def add_title_to_widget(self, title: str, widget: QWidget):
         result = QGroupBox(title)

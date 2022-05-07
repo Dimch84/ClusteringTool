@@ -1,6 +1,10 @@
 import os
 import shutil
 import uuid
+from copy import copy
+
+import numpy as np
+import pandas
 
 from clustering.model.Model import AlgoRunConfig, AlgoRunResults
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
@@ -32,14 +36,14 @@ class Presenter:
     def get_dataset_name(self, dataset_id: uuid):
         return self.model.datasets[dataset_id].name
 
+    def get_dataset_points(self, dataset_id: uuid):
+        return self.model.datasets[dataset_id].data
+
     def get_score_name(self, score_id: uuid):
         return self.model.scores[score_id].name
 
     def get_algo_run_results(self, algo_run_id: uuid):
         return self.model.algo_run_results[algo_run_id]
-
-    def get_dataset_points(self, dataset_id: uuid):
-        return self.model.datasets[dataset_id].data
 
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
@@ -133,11 +137,13 @@ class Presenter:
         params = self.view.show_generate_dataset_dialog()
         if params is None:
             return
-        dataset = generate_random_dataset(name=params.name,
-                                          n_samples=params.n_samples,
-                                          num_of_classes=params.num_of_classes,
-                                          n_features=params.n_features,
-                                          cluster_std=params.cluster_std)
+        dataset = generate_random_dataset(
+            name=params.name,
+            n_samples=params.n_samples,
+            num_of_classes=params.num_of_classes,
+            n_features=params.n_features,
+            cluster_std=params.cluster_std
+        )
         self.__add_dataset(dataset)
 
     def change_cur_dataset(self, dataset_id):
@@ -145,6 +151,8 @@ class Presenter:
 
     def save_session_pushed(self):
         file = self.view.show_save_file_dialog("Save session", "*.ini")
+        if not file:
+            return
         self.model.save(file)
 
     def load_session_pushed(self):
@@ -160,6 +168,17 @@ class Presenter:
         self.model.save()
         self.model.algo_run_results.clear()
         self.view.load_from_model(self.model)
+
+    def export_algo_run_results(self, algo_run_id: uuid):
+        file = self.view.show_save_file_dialog("Export results", "*.csv")
+        if not file:
+            return
+        results = self.get_algo_run_results(algo_run_id)
+        dataset = self.model.datasets[results.config.dataset_id]
+        data = np.append(dataset.data, np.array(results.pred)[np.newaxis].T, 1)
+        col_names = copy(dataset.feature_names) + ["Cluster"]
+        df = pandas.DataFrame(data=data, columns=col_names)
+        df.to_csv(file, index=False)
 
     def close_listener(self):
         self.model.save()

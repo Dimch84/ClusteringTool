@@ -44,9 +44,10 @@ class ClusteringView(QWidget):
         scene = QGraphicsScene()
         points = self.resize_points()
         for idx, point in enumerate(points):
-            scene.addEllipse(point.x(), point.y(), 10, 10,
-                             QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
-                             QBrush(self.colors[self.pred[idx]])
+            scene.addEllipse(
+                point.x(), point.y(), 10, 10,
+                QPen(self.colors[self.pred[idx]], 3, Qt.SolidLine),
+                QBrush(self.colors[self.pred[idx]])
             ).setFlag(QGraphicsItem.ItemIsSelectable)
         return scene
 

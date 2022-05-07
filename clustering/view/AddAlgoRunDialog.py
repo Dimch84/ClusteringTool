@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QDialog, QComboBox, QFormLayout, QWidget, QVBoxLayou
     QCheckBox, QSizePolicy, QLineEdit
 
 from clustering.model.Algorithm import AlgoParams
-from clustering.model.Model import AlgoRunConfig
 from clustering.view.DialogHelper import DialogHelper
 from clustering.presenter.Presenter import Presenter
 from clustering.view.AlgoParamsSetter import AlgoParamsSetter, ParamsSetterAttr
@@ -43,16 +42,17 @@ class ScoresSelector(QWidget):
         return self.selected_scores
 
 
-class AddAlgoRunDialog(QDialog, DialogHelper):
-    @dataclass
-    class AddAlgoDialogResult:
-        name: str
-        algo_id: uuid
-        params: dict
-        score_ids: list[uuid]
+@dataclass
+class AddAlgoDialogResult:
+    name: str
+    algo_id: uuid
+    params: dict
+    score_ids: list[uuid]
 
-    def __init__(self, presenter: Presenter, algo_ids: [uuid], score_ids: [uuid]):
-        super().__init__()
+
+class AddAlgoRunDialog(QDialog, DialogHelper):
+    def __init__(self, parent: QWidget, presenter: Presenter, algo_ids: [uuid], score_ids: [uuid]):
+        super().__init__(parent)
         self.setWindowTitle("Algorithm settings")
         self.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
         self.setMinimumSize(600, 0)
@@ -95,7 +95,7 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
         ))
 
     def get_result(self):
-        return self.AddAlgoDialogResult(
+        return AddAlgoDialogResult(
             name=self.name_input.text(),
             algo_id=self.algo_selector.currentData(),
             params=self.algo_params_setter.get_params(),

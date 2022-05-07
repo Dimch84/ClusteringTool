@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication
 import sys
+import numpy as np
 
 from clustering.model.Algorithm import load_algorithms
 from clustering.model.Dataset import load_all_datasets
@@ -9,7 +10,6 @@ from clustering.presenter.Presenter import Presenter
 from clustering.scores.default_scores import scores
 
 app = QApplication(sys.argv)
-
 
 all_saved_algo_names = [algo.name for algo in load_algorithms()]
 if len(all_saved_algo_names) > len(set(all_saved_algo_names)):

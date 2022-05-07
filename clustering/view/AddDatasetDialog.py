@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QDialogButtonBox, QLineEdit
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QDialogButtonBox, QLineEdit, \
+    QWidget
 from dataclasses import dataclass
 
 from clustering.view.DialogHelper import DialogHelper
@@ -12,8 +13,8 @@ class AddDatasetDialogResults:
 
 
 class AddDatasetDialog(QDialog, DialogHelper):
-    def __init__(self, columns: list[str]):
-        super().__init__()
+    def __init__(self, parent: QWidget, columns: list[str]):
+        super().__init__(parent)
         self.cols = columns
         self.included_cols = set()
         self.normalise = False

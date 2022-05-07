@@ -1,9 +1,9 @@
 venv
-__pycache__
+clustering/__pycache__
 clustering/algorithms/__pycache__
 clustering/model/__pycache__
 clustering/presenter/__pycache__
 clustering/scores/__pycache__
 clustering/view/__pycache__
 clustering/view/AlgoResultsTab/__pycache__
-.idea
+.idea/
