@@ -39,6 +39,9 @@ class Presenter:
     def get_dataset_points(self, dataset_id: uuid):
         return self.model.datasets[dataset_id].data
 
+    def get_dataset_feature_names(self, dataset_id: uuid):
+        return self.model.datasets[dataset_id].feature_names
+
     def get_score_name(self, score_id: uuid):
         return self.model.scores[score_id].name
 

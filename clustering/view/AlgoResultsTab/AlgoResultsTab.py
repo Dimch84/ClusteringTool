@@ -1,6 +1,7 @@
 import uuid
 
-from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout, QPushButton, QDialog, \
+    QTextEdit, QTableWidget, QTableWidgetItem, QSizePolicy
 
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
 from clustering.presenter.Presenter import Presenter
@@ -25,25 +26,24 @@ class AlgoResultsTab(QWidget):
         self.algo_run_id = algo_run_id
 
         algo_run_results = presenter.get_algo_run_results(algo_run_id)
-
+        self.points = presenter.get_dataset_points(algo_run_results.config.dataset_id)
+        self.feature_names = presenter.get_dataset_feature_names(algo_run_results.config.dataset_id)
+        self.pred = algo_run_results.pred
         self.parameters_widget = AlgoParamsSetter(ParamsSetterAttr(
             params=presenter.get_algo_params(algo_run_results.config.algorithm_id),
             values=algo_run_results.config.params
         ))
         self.scores_widget = ScoresWidget(algo_run_results.scores)
-        self.clustering_view = ClusteringView(
-            points=presenter.get_dataset_points(algo_run_results.config.dataset_id),
-            pred=algo_run_results.pred
-        )
+        self.clustering_view = ClusteringView(self.points, self.pred)
+        self.show_in_analytic_mode_button = QPushButton("Show table")
+        self.show_in_analytic_mode_button.clicked.connect(self.show_in_analytic_mode_listener)
         self.rerun_button = QPushButton("Rerun algorithm")
         self.rerun_button.clicked.connect(self.rerun_algo_button_listener)
-        self.export_button = QPushButton("Export to csv")
-        self.export_button.clicked.connect(self.export_results_button_listener)
         layout = QGridLayout()
         layout.addWidget(self.add_title_to_widget("Clustering", self.clustering_view), 0, 0, 2, 3)
         layout.addWidget(self.add_title_to_widget("Scores", self.scores_widget), 0, 3, 1, 1)
         layout.addWidget(self.add_title_to_widget("Parameters", self.parameters_widget), 1, 3, 1, 1)
-        layout.addWidget(self.export_button, 2, 0, 1, 3)
+        layout.addWidget(self.show_in_analytic_mode_button, 2, 0, 1, 3)
         layout.addWidget(self.rerun_button, 2, 3, 1, 1)
         self.setLayout(layout)
 
@@ -55,6 +55,26 @@ class AlgoResultsTab(QWidget):
 
     def export_results_button_listener(self):
         self.presenter.export_algo_run_results(self.algo_run_id)
+
+    def show_in_analytic_mode_listener(self):
+        dialog = QDialog()
+        dialog.setWindowTitle("Results")
+        dialog.setMinimumSize(800, 700)
+        layout = QVBoxLayout()
+        table = QTableWidget(len(self.points), len(self.feature_names) + 1)
+        for i, title in enumerate(self.feature_names):
+            table.setHorizontalHeaderItem(i, QTableWidgetItem(title))
+        table.setHorizontalHeaderItem(len(self.feature_names), QTableWidgetItem("Cluster"))
+        for i, point in enumerate(self.points):
+            for j, val in enumerate(point):
+                table.setItem(i, j, QTableWidgetItem("{:.4f}".format(val)))
+            table.setItem(i, len(point), QTableWidgetItem(str(self.pred[i])))
+        export_button = QPushButton("Export to csv")
+        export_button.clicked.connect(self.export_results_button_listener)
+        layout.addWidget(table)
+        layout.addWidget(export_button)
+        dialog.setLayout(layout)
+        dialog.exec()
 
     def add_title_to_widget(self, title: str, widget: QWidget):
         result = QGroupBox(title)

@@ -29,7 +29,6 @@ class _Window:
 class CentralWidget(QWidget):
     def __init__(self, presenter: Presenter):
         super().__init__()
-        self.setWindowTitle("Clustering")
 
         self.presenter = presenter
         self.windows: dict[uuid, _Window] = {}
@@ -105,7 +104,7 @@ class CentralWidget(QWidget):
 class View(QMainWindow):
     def __init__(self, presenter: Presenter):
         super().__init__()
-
+        self.setWindowTitle("ClusteringTool")
         self.setGeometry(70, 100, 1600, 900)
         self.presenter = presenter
         self.central_widget = CentralWidget(presenter)
