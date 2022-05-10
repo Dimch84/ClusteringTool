@@ -1,12 +1,18 @@
 import os
 import shutil
 import uuid
-from copy import copy
-
 import numpy as np
 import pandas
+from copy import copy
+from dataclasses import dataclass
 
-from clustering.model.Model import AlgoRunConfig, AlgoRunResults
+from clustering.model.Dataset import load_all_datasets, DuplicatedDatasetNameError, generate_random_dataset, \
+    get_cols_with_type, get_feature_cols
+from clustering.algorithms.default_algorithms import algorithms
+from clustering.scores.default_scores import scores
+from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoRun
+from clustering.view.View import View
+from clustering.model.Model import AlgoRunConfig, AlgoRunResults, Model, DuplicatedAlgoRunError
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
@@ -125,15 +131,23 @@ class Presenter:
             return
 
         df = load_from_csv(file)
-        result = self.view.show_add_dataset_dialog(df.columns.tolist())
+        result = self.view.show_add_dataset_dialog(get_feature_cols(df).columns.tolist(), get_cols_with_type(df, ['object']).columns.tolist())
         if result is None:
             return
 
-        df = df[result.included_cols]
-        data = df.to_numpy()
+        data = df[result.included_cols].to_numpy()
         if result.normalise:
             data = normalise_dataset(data)
-        dataset = Dataset(data, None, None, df.columns.tolist(), result.name)
+        titles = None if result.title_col is None else df[result.title_col].to_numpy()
+
+        dataset = Dataset(
+            data=data,
+            num_of_classes=None,
+            target=None,
+            feature_names=result.included_cols,
+            name=result.name,
+            titles=titles
+        )
         self.__add_dataset(dataset)
 
     def generate_new_dataset_pushed(self):

@@ -3,6 +3,7 @@ import uuid
 from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout, QPushButton, QDialog, \
     QTextEdit, QTableWidget, QTableWidgetItem, QSizePolicy
 
+from clustering.model.Dataset import Dataset
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
 from clustering.presenter.Presenter import Presenter
 from clustering.view.AlgoParamsSetter import AlgoParamsSetter, ParamsSetterAttr
@@ -34,7 +35,7 @@ class AlgoResultsTab(QWidget):
             values=algo_run_results.config.params
         ))
         self.scores_widget = ScoresWidget(algo_run_results.scores)
-        self.clustering_view = ClusteringView(self.points, self.pred)
+        self.clustering_view = ClusteringView(self.points, self.pred, algo_run_results.dataset)
         self.show_in_analytic_mode_button = QPushButton("Show table")
         self.show_in_analytic_mode_button.clicked.connect(self.show_in_analytic_mode_listener)
         self.rerun_button = QPushButton("Rerun algorithm")

@@ -20,12 +20,13 @@ class Dataset:
     """
     data: np.ndarray
     target: np.ndarray
+    titles: np.ndarray
     num_of_classes: int
     feature_names: [str]
     name: str
 
     def __init__(self, data: np.ndarray, num_of_classes: int = None,
-                 target: np.ndarray = None, feature_names: [str] = None, name: str = "Unnamed"):
+                 target: np.ndarray = None, feature_names: [str] = None, name: str = "Unnamed", titles: np.ndarray = None):
         """
         When function is called, at least one of (num_of_classes, target) should be specified (preferably, exactly one).
         """
@@ -33,6 +34,7 @@ class Dataset:
         self.target = target
         self.num_of_classes = num_of_classes
         self.name = name
+        self.titles = titles
 
         if target is not None:
             self.num_of_classes = len(set(target))
@@ -40,6 +42,9 @@ class Dataset:
         if feature_names is None:
             feature_names = np.array([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
         self.feature_names = feature_names
+
+        if titles is None:
+            self.titles = np.array([f"Point #{i}" for i in range(data.shape[0])])
 
     def __str__(self):
         return f"data = {self.data}\nfeature_names = {self.feature_names}\n" \
@@ -62,20 +67,27 @@ def normalise_dataset(data: np.ndarray) -> np.ndarray:
 
 
 def load_from_csv(file_name: str) -> pandas.DataFrame:
-    """
-    Reads dataset from csv file and returns it with all numeric features
-    """
-    df = pandas.read_csv(file_name)
+    return pandas.read_csv(file_name)
+
+
+def get_cols_with_type(df: pandas.DataFrame, types: [str]) -> pandas.DataFrame:
     groups = df.columns.to_series().groupby(df.dtypes).groups
     groups = {str(k): list(v) for k, v in groups.items()}
-    numeric_cols = groups.get('int64', []) + groups.get('float64', [])
-    return df[numeric_cols]
+    cols = []
+    for t in types:
+        cols += groups.get(t, [])
+    return df[cols]
+
+
+def get_feature_cols(df: pandas.DataFrame) -> pandas.DataFrame:
+    return get_cols_with_type(df, ['int64', 'float64'])
 
 
 def _save_to_csv(data: Dataset, file_name: str = None):
     if file_name is None:
         file_name = _dataset_filename(data.name)
-    df = pandas.DataFrame(data=data.data, columns=data.feature_names)
+    all_data = np.append(data.data, data.titles[np.newaxis].T, 1)
+    df = pandas.DataFrame(data=all_data, columns=data.feature_names + ['__Title__'])
     df.to_csv(file_name, index=False)
 
 
@@ -92,8 +104,14 @@ def _deserialize_dataset(dataset: dict) -> Dataset:
     num_of_classes = dataset['num_of_classes']
     target = None if dataset['target'] is None else np.array(dataset['target'])
     df = load_from_csv(_dataset_filename(name))
-    data = df.to_numpy()
-    return Dataset(data, num_of_classes=num_of_classes, target=target, feature_names=df.columns.tolist(), name=name)
+    titles = df['__Title__'].to_numpy() if '__Title__' in df.columns.tolist() else None
+    data = get_feature_cols(df).to_numpy()
+    return Dataset(data,
+                   num_of_classes=num_of_classes,
+                   target=target,
+                   feature_names=get_feature_cols(df).columns.tolist(),
+                   name=name,
+                   titles=titles)
 
 
 def _write_to_json(datasets: [dict]):
