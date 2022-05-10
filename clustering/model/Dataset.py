@@ -40,7 +40,7 @@ class Dataset:
             self.num_of_classes = len(set(target))
 
         if feature_names is None:
-            feature_names = np.array([f"Feature {i}" for i in range(1, data.shape[1] + 1)])
+            feature_names = [f"Feature {i}" for i in range(1, data.shape[1] + 1)]
         self.feature_names = feature_names
 
         if titles is None:

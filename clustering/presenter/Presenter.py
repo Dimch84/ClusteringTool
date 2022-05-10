@@ -4,15 +4,9 @@ import uuid
 import numpy as np
 import pandas
 from copy import copy
-from dataclasses import dataclass
 
-from clustering.model.Dataset import load_all_datasets, DuplicatedDatasetNameError, generate_random_dataset, \
-    get_cols_with_type, get_feature_cols
-from clustering.algorithms.default_algorithms import algorithms
-from clustering.scores.default_scores import scores
-from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoRun
-from clustering.view.View import View
-from clustering.model.Model import AlgoRunConfig, AlgoRunResults, Model, DuplicatedAlgoRunError
+from clustering.model.Dataset import get_cols_with_type, get_feature_cols
+from clustering.model.Model import AlgoRunConfig, AlgoRunResults
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
@@ -44,6 +38,9 @@ class Presenter:
 
     def get_dataset_points(self, dataset_id: uuid):
         return self.model.datasets[dataset_id].data
+
+    def get_dataset_titles(self, dataset_id: uuid):
+        return self.model.datasets[dataset_id].titles
 
     def get_dataset_feature_names(self, dataset_id: uuid):
         return self.model.datasets[dataset_id].feature_names

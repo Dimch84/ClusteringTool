@@ -1,4 +1,6 @@
 import random
+import uuid
+
 import numpy as np
 from PyQt5.QtCore import Qt, QPointF, QRect
 from PyQt5.QtGui import QColor, QBrush, QPen
@@ -7,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QGraphicsScene, QGraphicsView, QGraphicsIte
 from PyQt5.QtGui import QTransform
 from sklearn.decomposition import PCA
 
-from clustering.model.Dataset import Dataset
+from clustering.presenter.Presenter import Presenter
 
 
 class ScalableGraphicsView(QGraphicsView):
@@ -65,23 +67,21 @@ class EllipseWithInfo(QGraphicsEllipseItem):
 
 
 class ClusteringView(QWidget):
-    def __init__(self, points: np.ndarray, pred: np.ndarray, dataset: Dataset):
+    def __init__(self, points: np.ndarray, pred: np.ndarray, presenter: Presenter, dataset_id: uuid):
         super().__init__()
         scene = QGraphicsScene()
         if points.shape[1] != 2:
             points = PCA(n_components=2).fit_transform(points)
         self.points = list(map(lambda point: QPointF(point[0], point[1]), points))
-        self.dataset = dataset
+        self.presenter = presenter
+        self.dataset_id = dataset_id
         self.pred = pred
         self.graphicView = ScalableGraphicsView(scene, self)
         self.setMinimumSize(800, 600)
         self.graphicView.setMinimumSize(800, 600)
         self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
+
         self.graphicView.setScene(self.get_scene_with_points())
-        rect = self.graphicView.sceneRect()
-        rect.adjust(-0.4 * rect.width(), -0.4 * rect.height(), 0.4 * rect.width(), 0.4 * rect.height())
-        self.graphicView.setSceneRect(rect)
-        self.graphicView.setAlignment(Qt.AlignCenter)
 
     def get_scene_with_points(self):
         scene = QGraphicsScene()
@@ -92,12 +92,20 @@ class ClusteringView(QWidget):
                                       QBrush(self.colors[self.pred[idx]]), self.get_point_info(idx))
             ellipse.setFlag(QGraphicsItem.ItemIsSelectable)
             scene.addItem(ellipse)
+
+        rect = scene.sceneRect()
+        width = self.graphicView.width()
+        height = self.graphicView.height()
+        rect.adjust(-1.5 * width, -1.5 * height, 1.5 * width, 1.5 * height)
+        scene.setSceneRect(rect)
         return scene
 
     def get_point_info(self, idx: int) -> str:
-        info = self.dataset.titles[idx] + "\n\n"
-        for feature_id in range(len(self.dataset.feature_names)):
-            info += f"{self.dataset.feature_names[feature_id]} = {self.dataset.data[idx][feature_id]}\n"
+        info = self.presenter.get_dataset_titles(self.dataset_id)[idx] + "\n\n"
+        feature_names = self.presenter.get_dataset_feature_names(self.dataset_id)
+        data = self.presenter.get_dataset_points(self.dataset_id)
+        for feature_id in range(len(feature_names)):
+            info += f"{feature_names[feature_id]} = {data[idx][feature_id]}\n"
         return info
 
     def resize_points(self):

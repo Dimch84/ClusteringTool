@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import partial
 
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGridLayout, QComboBox, \
-    QStackedWidget, QAction, QFileDialog, QErrorMessage, QMessageBox, QVBoxLayout
+    QStackedWidget, QAction, QFileDialog, QErrorMessage, QMessageBox
 
 from clustering.model.Model import Model, AlgoRunConfig
 from clustering.view.AddAlgoRunDialog import AddAlgoRunDialog
@@ -159,7 +159,7 @@ class View(QMainWindow):
         return QFileDialog.getSaveFileName(self, caption=caption, filter=filter)[0]
 
     def show_open_file_dialog(self, caption: str, filter: str):
-        return QFileDialog.getOpenFileName(self, caption, filter)[0]
+        return QFileDialog.getOpenFileName(self, caption=caption, filter=filter)[0]
 
     def show_add_dataset_dialog(self, feature_cols: list[str], title_cols: list[str]):
         add_dataset_dialog = AddDatasetDialog(feature_cols=feature_cols, title_cols=title_cols)

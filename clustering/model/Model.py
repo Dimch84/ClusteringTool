@@ -23,6 +23,7 @@ class AlgoRunResults:
     config: AlgoRunConfig
     pred: np.ndarray
     scores: dict
+    dataset: uuid
 
 
 class Model:
@@ -44,7 +45,7 @@ class Model:
         pred = algorithm.run(dataset.data, config.params)
         scores = self.calc_scores(pred, dataset, [self.scores[score_id] for score_id in config.score_ids])
         algo_run_result_id = uuid.uuid4()
-        algo_run_result = AlgoRunResults(name, config, pred, scores)
+        algo_run_result = AlgoRunResults(name, config, pred, scores, dataset)
         self.algo_run_results[algo_run_result_id] = algo_run_result
         return algo_run_result_id
 
@@ -120,5 +121,6 @@ class Model:
                         score_ids=list([scores_dict[score_name] for score_name in algo_run["scores"].keys()])
                     ),
                     pred=algo_run["pred"],
-                    scores=algo_run["scores"]
+                    scores=algo_run["scores"],
+                    dataset=datasets_dict[dataset_name]
                 )

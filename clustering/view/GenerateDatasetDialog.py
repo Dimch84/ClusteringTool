@@ -63,7 +63,7 @@ class GenerateDatasetDialog(QDialog, DialogHelper):
         self.result.n_features = int(n_features)
 
     def __change_clusterstd(self, cluster_std: str):
-        self.result.cluster_std = int(cluster_std)
+        self.result.cluster_std = float(cluster_std)
 
     def get_result(self):
         return self.result
