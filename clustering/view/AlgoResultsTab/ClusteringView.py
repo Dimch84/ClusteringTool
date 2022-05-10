@@ -94,7 +94,7 @@ class ClusteringView(QWidget):
         return scene
 
     def get_point_info(self, idx: int) -> str:
-        info = f"Point #{idx}:\n\n"
+        info = self.dataset.titles[idx] + "\n\n"
         for feature_id in range(len(self.dataset.feature_names)):
             info += f"{self.dataset.feature_names[feature_id]} = {self.dataset.data[idx][feature_id]}\n"
         return info

@@ -126,8 +126,8 @@ class View(QMainWindow):
     def show_open_file_dialog(self, caption: str, filter: str):
         return QFileDialog.getOpenFileName(self, caption=caption, filter=filter)[0]
 
-    def show_add_dataset_dialog(self, columns: list[str]):
-        add_dataset_dialog = AddDatasetDialog(columns=columns)
+    def show_add_dataset_dialog(self, feature_cols: list[str], title_cols: list[str]):
+        add_dataset_dialog = AddDatasetDialog(feature_cols=feature_cols, title_cols=title_cols)
         return None if not add_dataset_dialog.exec() else add_dataset_dialog.get_result()
 
     def show_generate_dataset_dialog(self):
