@@ -51,6 +51,9 @@ class Presenter:
     def get_algo_run_results(self, algo_run_id: uuid):
         return self.model.algo_run_results[algo_run_id]
 
+    def get_score_ids(self):
+        return self.model.scores.keys()
+
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
@@ -84,6 +87,15 @@ class Presenter:
             self.view.show_error(str("Some parameters weren't configured"))
         except (ValueError, TypeError, OverflowError):
             self.view.show_error(str("Invalid parameters"))
+
+    def add_algo_config_pushed(self):
+        self.view.add_algo_config(self.model.algorithms.keys())
+
+    def launch_algo_run(self, algo_run_config):
+        try:
+            return self.model.add_algo_run(algo_run_config.name, algo_run_config.config)
+        except:
+            return None
 
     def remove_algo_run_pushed(self, algorithm_id: uuid):
         if self.model.remove_algo_run_results(algorithm_id):

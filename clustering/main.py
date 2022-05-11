@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QApplication
 import sys
-import numpy as np
 
 from clustering.model.Algorithm import load_algorithms
 from clustering.model.Dataset import load_all_datasets
@@ -17,7 +16,7 @@ if len(all_saved_algo_names) > len(set(all_saved_algo_names)):
     raise Exception
 all_saved_dataset_names = [dataset.name for dataset in load_all_datasets()]
 if len(all_saved_dataset_names) > len(set(all_saved_dataset_names)):
-    print("Algorithms in clustering/algorithms are not distinct")
+    print("Datasets in clustering/datasets are not distinct")
     raise Exception
 
 presenter = Presenter()
@@ -27,9 +26,9 @@ model = Model(
     scores=scores
 )
 model.load()
-view = View(presenter)
-
 presenter.set_model(model)
+
+view = View(presenter, True)
 presenter.set_view(view)
 
 view.load_from_model(presenter.model)

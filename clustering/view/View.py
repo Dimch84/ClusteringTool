@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from functools import partial
 
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGridLayout, QComboBox, \
-    QStackedWidget, QAction, QFileDialog, QErrorMessage, QMessageBox
+    QStackedWidget, QAction, QFileDialog, QErrorMessage, QMessageBox, QGroupBox, QCheckBox, QVBoxLayout, QListWidget
 
 from clustering.model.Model import Model, AlgoRunConfig
 from clustering.view.AddAlgoRunDialog import AddAlgoRunDialog
 from clustering.view.AddDatasetDialog import AddDatasetDialog
+from clustering.view.AlgoCompareWidget import AlgoCompareWidget
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
 from clustering.presenter.Presenter import Presenter
 from clustering.view.GenerateDatasetDialog import GenerateDatasetDialog
@@ -101,13 +102,75 @@ class CentralWidget(QWidget):
         self.windows[dataset_id].tab_widget.setCurrentIndex(prev_index)
 
 
-class View(QMainWindow):
+class OtherCentralWidget(QWidget):
     def __init__(self, presenter: Presenter):
+        super().__init__()
+        self.presenter = presenter
+        self.datasets = []
+        self.included_datasets = set()
+        self.algo_configs = QListWidget()
+        self.algo_configs_list = []
+        self.dataset_selector = QGroupBox()
+        self.dataset_selector.setLayout(QVBoxLayout())
+        self.score_selector = self.__create_score_selector()
+        self.score_selector.currentIndexChanged.connect(self.__change_score)
+
+        self.add_algo_button = QPushButton("Add algorithm configuration")
+        self.add_algo_button.clicked.connect(self.presenter.add_algo_config_pushed)
+        self.go_btn = QPushButton("Show results")
+        self.go_btn.clicked.connect(self.launch_all)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.dataset_selector)
+        layout.addWidget(self.score_selector)
+        layout.addWidget(self.add_algo_button)
+        layout.addWidget(self.algo_configs)
+        layout.addWidget(self.go_btn)
+        self.setLayout(layout)
+
+    def __create_score_selector(self):
+        result = QComboBox()
+        for id in self.presenter.get_score_ids():
+            result.addItem(self.presenter.get_score_name(id), id)
+        self.use_score = result.itemData(0)
+        return result
+
+    def __change_score(self, ind: int):
+        self.use_score = self.score_selector.itemData(ind)
+
+    def add_dataset(self, dataset_id: uuid):
+        self.datasets.append(dataset_id)
+        checkBox = QCheckBox(self.presenter.get_dataset_name(dataset_id))
+        checkBox.stateChanged.connect(lambda x, id=dataset_id:
+                                      self.included_datasets.add(id) if x else self.included_datasets.remove(id))
+        self.dataset_selector.layout().addWidget(checkBox)
+
+    def add_algo_config(self, algo_ids: [uuid]):
+        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids, [])
+        if add_algo_dialog.exec():
+            result = add_algo_dialog.get_result()
+            self.algo_configs.addItem(result.name)
+            self.algo_configs_list.append(result)
+
+    def add_results_tab(self, algo_run_id):
+        pass
+
+    def launch_all(self):
+        dialog = AlgoCompareWidget(self.presenter, self.included_datasets, self.algo_configs_list, self.use_score)
+        dialog.exec()
+
+    def change_algo_run_results_tab(self, algo_run_id: uuid, next_algo_run_id: uuid):
+        pass
+
+
+class View(QMainWindow):
+    def __init__(self, presenter: Presenter, compare_mode: bool = False):
         super().__init__()
         self.setWindowTitle("ClusteringTool")
         self.setGeometry(70, 100, 1600, 900)
         self.presenter = presenter
-        self.central_widget = CentralWidget(presenter)
+        self.compare_mode = compare_mode
+        self.central_widget = OtherCentralWidget(presenter) if compare_mode else CentralWidget(presenter)
         self.setCentralWidget(self.central_widget)
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('&File')
@@ -133,7 +196,7 @@ class View(QMainWindow):
 
     def load_from_model(self, model: Model):
         self.central_widget.close()
-        self.central_widget = CentralWidget(self.presenter)
+        self.central_widget = OtherCentralWidget(self.presenter) if self.compare_mode else CentralWidget(self.presenter)
         self.setCentralWidget(self.central_widget)
         for dataset_id in model.datasets.keys():
             self.add_dataset(dataset_id)
@@ -171,6 +234,9 @@ class View(QMainWindow):
 
     def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]):
         return self.central_widget.show_add_algo_run_dialog(algo_ids, score_ids)
+
+    def add_algo_config(self, algo_ids: [uuid]):
+        self.central_widget.add_algo_config(algo_ids)
 
     def create_new_action(self, name: str, shortcut: str, handler: Callable):
         action = QAction(name, self)
