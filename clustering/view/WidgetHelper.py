@@ -26,7 +26,7 @@ class NonNegativeDoubleValidator(QDoubleValidator):
         return result, i, p
 
 
-class DialogHelper:
+class WidgetHelper:
     def create_button_box(self):
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttonBox.accepted.connect(self.accept)

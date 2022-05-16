@@ -5,7 +5,7 @@ from clustering.model.Model import AlgoRunConfig
 from clustering.presenter.Presenter import Presenter
 import clustering.view.View as vw  # Needed due to circular import; TODO: fix
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
-from clustering.view.DialogHelper import DialogHelper
+from clustering.view.WidgetHelper import WidgetHelper
 from PyQt5.QtCore import Qt
 
 
@@ -17,7 +17,7 @@ class NumericItem(QTableWidgetItem):
         return lhs < rhs
 
 
-class AlgoCompareWidget(QDialog, DialogHelper):
+class AlgoCompareWidget(QDialog, WidgetHelper):
     def __init__(self, presenter: Presenter, dataset_ids: [uuid], algo_run_configs: [uuid], score_id: uuid):
         super().__init__()
         self.presenter = presenter

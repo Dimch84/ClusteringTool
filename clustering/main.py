@@ -34,3 +34,4 @@ presenter.set_view(view)
 view.load_from_model(presenter.model)
 view.show()
 sys.exit(app.exec())
+

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroup
     QRadioButton
 from dataclasses import dataclass
 
-from clustering.view.DialogHelper import DialogHelper
+from clustering.view.WidgetHelper import WidgetHelper
 
 
 @dataclass
@@ -13,7 +13,7 @@ class AddDatasetDialogResults:
     normalise: bool
 
 
-class AddDatasetDialog(QDialog, DialogHelper):
+class AddDatasetDialog(QDialog, WidgetHelper):
     def __init__(self, feature_cols: list[str], title_cols: list[str]):
         super().__init__()
         self.feature_cols = feature_cols
