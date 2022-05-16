@@ -3,7 +3,6 @@ from PyQt5.QtWidgets import QDialog, QTableWidget, QVBoxLayout, QTableWidgetItem
 
 from clustering.model.Model import AlgoRunConfig
 from clustering.presenter.Presenter import Presenter
-import clustering.view.View as vw  # Needed due to circular import; TODO: fix
 from clustering.view.AlgoResultsTab.AlgoResultsTab import AlgoResultsTab
 from clustering.view.WidgetHelper import WidgetHelper
 from PyQt5.QtCore import Qt
@@ -36,15 +35,15 @@ class AlgoCompareWidget(QDialog, WidgetHelper):
         table.setHorizontalHeaderItem(0, QTableWidgetItem('Algorithm'))
         table.setHorizontalHeaderItem(1, QTableWidgetItem(f'Score ({score_name}):'))
         for i, algo_config in enumerate(self.algo_run_configs):
-            algo_run_id = self.presenter.launch_algo_run(vw.AddAlgoDialogResult(
-                name=algo_config.name,
-                config=AlgoRunConfig(
+            algo_run_id = self.presenter.launch_algo_run(
+                AlgoRunConfig(
+                    name=algo_config.name,
                     dataset_id=dataset_id,
                     algorithm_id=algo_config.algo_id,
                     params=algo_config.params,
                     score_ids=[self.score_id]
                 )
-            ))
+            )
             score = None if algo_run_id is None else self.presenter.get_algo_run_results(algo_run_id).scores[score_name]
             item = QTableWidgetItem(algo_config.name)
             item.setData(Qt.UserRole, algo_run_id)

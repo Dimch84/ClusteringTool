@@ -18,12 +18,6 @@ from clustering.view.GenerateDatasetDialog import GenerateDatasetDialog
 from clustering.view.WidgetHelper import WidgetHelper
 
 
-@dataclass
-class AddAlgoDialogResult:
-    name: str
-    config: AlgoRunConfig
-
-
 @dataclass()
 class _Window:
     algo_run_ids: list[uuid]
@@ -48,18 +42,16 @@ class CentralWidget(QWidget):
         layout.addWidget(self.stacked_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
-    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]):
+    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]) -> AlgoRunConfig | None:
         add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids, score_ids)
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
-            return AddAlgoDialogResult(
-                name=result.name,
-                config=AlgoRunConfig(
+            return AlgoRunConfig(
+                    name=result.name,
                     dataset_id=self.dataset_selector.currentData(),
                     algorithm_id=result.algo_id,
                     params=result.params,
                     score_ids=result.score_ids
-                )
             )
         else:
             return None
@@ -81,10 +73,11 @@ class CentralWidget(QWidget):
         self.presenter.remove_algo_run_pushed(self.windows[dataset_id].algo_run_ids[index])
 
     def add_results_tab(self, algo_run_id: uuid):
-        results = self.presenter.get_algo_run_results(algo_run_id)
+        algo_run_results = self.presenter.get_algo_run_results(algo_run_id)
+        config = algo_run_results.config
         tab = AlgoResultsTab(self.presenter, algo_run_id)
-        self.windows[results.config.dataset_id].tab_widget.addTab(tab, results.name)
-        self.windows[results.config.dataset_id].algo_run_ids.append(algo_run_id)
+        self.windows[config.dataset_id].tab_widget.addTab(tab, config.name)
+        self.windows[config.dataset_id].algo_run_ids.append(algo_run_id)
 
     def remove_results_tab(self, algo_run_id: uuid):
         for dataset_id in self.windows.keys():
@@ -95,12 +88,13 @@ class CentralWidget(QWidget):
 
     def change_algo_run_results_tab(self, algo_run_id: uuid, next_algo_run_id: uuid):
         results = self.presenter.get_algo_run_results(next_algo_run_id)
-        dataset_id = results.config.dataset_id
+        config = results.config
+        dataset_id = config.dataset_id
         index = self.windows[dataset_id].algo_run_ids.index(algo_run_id)
         next_tab = AlgoResultsTab(self.presenter, next_algo_run_id)
         prev_index = self.windows[dataset_id].tab_widget.currentIndex()
         self.windows[dataset_id].tab_widget.removeTab(index)
-        self.windows[dataset_id].tab_widget.insertTab(index, next_tab, results.name)
+        self.windows[dataset_id].tab_widget.insertTab(index, next_tab, config.name)
         self.windows[dataset_id].algo_run_ids[index] = next_algo_run_id
         self.windows[dataset_id].tab_widget.setCurrentIndex(prev_index)
 
@@ -151,6 +145,7 @@ class OtherCentralWidget(QWidget, WidgetHelper):
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
             item.setData(Qt.UserRole, result)
+            item.setText(result.name)
 
     def __remove_algo_config(self):
         for item in self.algo_configs.selectedItems():
@@ -182,15 +177,15 @@ class OtherCentralWidget(QWidget, WidgetHelper):
             item.setData(Qt.UserRole, result)
             self.algo_configs.addItem(item)
 
-    def add_results_tab(self, algo_run_id):
-        pass
-
     def launch_all(self):
         algo_configs_list = []
         for ind in range(0, self.algo_configs.count()):
             algo_configs_list.append(self.algo_configs.item(ind).data(Qt.UserRole))
         dialog = AlgoCompareWidget(self.presenter, self.included_datasets, algo_configs_list, self.use_score)
         dialog.exec()
+
+    def add_results_tab(self, algo_run_id):
+        pass
 
     def change_algo_run_results_tab(self, algo_run_id: uuid, next_algo_run_id: uuid):
         pass
@@ -265,7 +260,7 @@ class View(QMainWindow):
         gen_dataset_dialog = GenerateDatasetDialog(self)
         return None if not gen_dataset_dialog.exec() else gen_dataset_dialog.get_result()
 
-    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]):
+    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]) -> AlgoRunConfig:
         return self.central_widget.show_add_algo_run_dialog(algo_ids, score_ids)
 
     def add_algo_config(self, algo_ids: [uuid]):

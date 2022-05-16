@@ -57,9 +57,8 @@ class Presenter:
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
-            next_algo_run_id = self.model.add_algo_run(
-                name=prev_results.name,
-                config=AlgoRunConfig(
+            next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
+                    name=prev_results.config.name,
                     dataset_id=prev_results.config.dataset_id,
                     algorithm_id=prev_results.config.algorithm_id,
                     params=params,
@@ -74,14 +73,14 @@ class Presenter:
             self.view.show_error(str("Invalid parameters"))
 
     def add_algo_run_pushed(self):
-        result = self.view.show_add_algo_run_dialog(
+        algo_run_config = self.view.show_add_algo_run_dialog(
             algo_ids=self.model.algorithms.keys(),
             score_ids=self.model.scores.keys()
         )
-        if result is None:
+        if algo_run_config is None:
             return
         try:
-            algo_run_id = self.model.add_algo_run(result.name, result.config)
+            algo_run_id = self.model.add_algo_run(algo_run_config)
             self.view.add_algo_run_results(algo_run_id)
         except KeyError:
             self.view.show_error(str("Some parameters weren't configured"))
@@ -93,7 +92,7 @@ class Presenter:
 
     def launch_algo_run(self, algo_run_config):
         try:
-            return self.model.add_algo_run(algo_run_config.name, algo_run_config.config)
+            return self.model.add_algo_run(algo_run_config)
         except:
             return None
 

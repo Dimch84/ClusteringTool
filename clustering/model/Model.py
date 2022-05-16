@@ -11,6 +11,7 @@ from clustering.model.Score import Score
 
 @dataclass()
 class AlgoRunConfig:
+    name: str
     dataset_id: uuid
     algorithm_id: uuid
     params: dict
@@ -19,7 +20,6 @@ class AlgoRunConfig:
 
 @dataclass()
 class AlgoRunResults:
-    name: str
     config: AlgoRunConfig
     pred: np.ndarray
     scores: dict
@@ -27,7 +27,7 @@ class AlgoRunResults:
 
 
 class Model:
-    def __init__(self, datasets: list[Dataset], algorithms: list[Algorithm], scores: list[Score]):
+    def __init__(self, datasets: list[Dataset], algorithms: list[Algorithm], scores: list[Score], compare_mode: bool = False):
         self.datasets: dict[uuid, Dataset] = {
             uuid.uuid4(): dataset for dataset in datasets
         }
@@ -38,14 +38,15 @@ class Model:
             uuid.uuid4(): score for score in scores
         }
         self.algo_run_results: dict[uuid, AlgoRunResults] = {}
+        self.compare_mode = compare_mode
 
-    def add_algo_run(self, name: str, config: AlgoRunConfig):
+    def add_algo_run(self, config: AlgoRunConfig):
         dataset = self.datasets[config.dataset_id]
         algorithm = self.algorithms[config.algorithm_id]
         pred = algorithm.run(dataset.data, config.params)
         scores = self.calc_scores(pred, dataset, [self.scores[score_id] for score_id in config.score_ids])
         algo_run_result_id = uuid.uuid4()
-        algo_run_result = AlgoRunResults(name, config, pred, scores, dataset)
+        algo_run_result = AlgoRunResults(config, pred, scores, dataset)
         self.algo_run_results[algo_run_result_id] = algo_run_result
         return algo_run_result_id
 
@@ -88,7 +89,7 @@ class Model:
             if dataset_name not in data.keys():
                 data[dataset_name] = []
             data[dataset_name].append({
-                "run_name": algo_run.name,
+                "run_name": algo_run.config.name,
                 "algo_name": algo_name,
                 "params": algo_run.config.params,
                 "scores": algo_run.scores,
@@ -113,8 +114,8 @@ class Model:
             for algo_run in data[dataset_name]:
                 algo_run_result_id = uuid.uuid4()
                 self.algo_run_results[algo_run_result_id] = AlgoRunResults(
-                    name=algo_run["run_name"],
                     config=AlgoRunConfig(
+                        name=algo_run["run_name"],
                         dataset_id=datasets_dict[dataset_name],
                         algorithm_id=algorithms_dict[algo_run["algo_name"]],
                         params=algo_run["params"],
