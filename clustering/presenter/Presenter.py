@@ -6,7 +6,7 @@ import pandas
 from copy import copy
 
 from clustering.model.Dataset import get_cols_with_type, get_feature_cols
-from clustering.model.Model import AlgoRunConfig, AlgoRunResults
+from clustering.model.Model import AlgoRunConfig, AlgoRunResults, AlgoConfig
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
@@ -48,7 +48,7 @@ class Presenter:
     def get_score_name(self, score_id: uuid):
         return self.model.scores[score_id].name
 
-    def get_algo_run_results(self, algo_run_id: uuid):
+    def get_algo_run_results(self, algo_run_id: uuid) -> AlgoRunResults:
         return self.model.algo_run_results[algo_run_id]
 
     def get_score_ids(self):
@@ -58,10 +58,12 @@ class Presenter:
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
             next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
-                    name=prev_results.config.name,
+                    algo_config=AlgoConfig(
+                        name=prev_results.config.algo_config.name,
+                        algo_id=prev_results.config.algo_config.algo_id,
+                        params=params
+                    ),
                     dataset_id=prev_results.config.dataset_id,
-                    algorithm_id=prev_results.config.algorithm_id,
-                    params=params,
                     score_ids=prev_results.config.score_ids
                 )
             )
@@ -73,10 +75,7 @@ class Presenter:
             self.view.show_error(str("Invalid parameters"))
 
     def add_algo_run_pushed(self):
-        algo_run_config = self.view.show_add_algo_run_dialog(
-            algo_ids=self.model.algorithms.keys(),
-            score_ids=self.model.scores.keys()
-        )
+        algo_run_config = self.view.show_add_algo_run_dialog(algo_ids=self.model.algorithms.keys())
         if algo_run_config is None:
             return
         try:
@@ -87,7 +86,7 @@ class Presenter:
         except (ValueError, TypeError, OverflowError):
             self.view.show_error(str("Invalid parameters"))
 
-    def add_algo_config_pushed(self):
+    def add_algo_config_pushed(self) -> uuid:
         self.view.add_algo_config(self.model.algorithms.keys())
 
     def launch_algo_run(self, algo_run_config):

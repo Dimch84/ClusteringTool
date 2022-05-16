@@ -42,16 +42,14 @@ class CentralWidget(QWidget):
         layout.addWidget(self.stacked_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
-    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]) -> AlgoRunConfig | None:
-        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids, score_ids)
+    def show_add_algo_run_dialog(self, algo_ids: [uuid]) -> AlgoRunConfig | None:
+        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids)
         if add_algo_dialog.exec():
-            result = add_algo_dialog.get_result()
+            algo_config = add_algo_dialog.get_result()
             return AlgoRunConfig(
-                    name=result.name,
+                    algo_config=algo_config,
                     dataset_id=self.dataset_selector.currentData(),
-                    algorithm_id=result.algo_id,
-                    params=result.params,
-                    score_ids=result.score_ids
+                    score_ids=self.presenter.get_score_ids()
             )
         else:
             return None
@@ -76,7 +74,7 @@ class CentralWidget(QWidget):
         algo_run_results = self.presenter.get_algo_run_results(algo_run_id)
         config = algo_run_results.config
         tab = AlgoResultsTab(self.presenter, algo_run_id)
-        self.windows[config.dataset_id].tab_widget.addTab(tab, config.name)
+        self.windows[config.dataset_id].tab_widget.addTab(tab, config.algo_config.name)
         self.windows[config.dataset_id].algo_run_ids.append(algo_run_id)
 
     def remove_results_tab(self, algo_run_id: uuid):
@@ -94,7 +92,7 @@ class CentralWidget(QWidget):
         next_tab = AlgoResultsTab(self.presenter, next_algo_run_id)
         prev_index = self.windows[dataset_id].tab_widget.currentIndex()
         self.windows[dataset_id].tab_widget.removeTab(index)
-        self.windows[dataset_id].tab_widget.insertTab(index, next_tab, config.name)
+        self.windows[dataset_id].tab_widget.insertTab(index, next_tab, config.algo_config.name)
         self.windows[dataset_id].algo_run_ids[index] = next_algo_run_id
         self.windows[dataset_id].tab_widget.setCurrentIndex(prev_index)
 
@@ -141,7 +139,7 @@ class OtherCentralWidget(QWidget, WidgetHelper):
 
     def __algo_config_clicked(self, item: QListWidgetItem):
         config = item.data(Qt.UserRole)
-        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, [config.algo_id], [], config)
+        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, [config.algo_id], config)
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
             item.setData(Qt.UserRole, result)
@@ -170,7 +168,7 @@ class OtherCentralWidget(QWidget, WidgetHelper):
         self.dataset_selector.layout().addWidget(checkBox)
 
     def add_algo_config(self, algo_ids: [uuid]):
-        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids, [])
+        add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids)
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
             item = QListWidgetItem(result.name)
@@ -260,8 +258,8 @@ class View(QMainWindow):
         gen_dataset_dialog = GenerateDatasetDialog(self)
         return None if not gen_dataset_dialog.exec() else gen_dataset_dialog.get_result()
 
-    def show_add_algo_run_dialog(self, algo_ids: [uuid], score_ids: [uuid]) -> AlgoRunConfig:
-        return self.central_widget.show_add_algo_run_dialog(algo_ids, score_ids)
+    def show_add_algo_run_dialog(self, algo_ids: [uuid]) -> AlgoRunConfig:
+        return self.central_widget.show_add_algo_run_dialog(algo_ids)
 
     def add_algo_config(self, algo_ids: [uuid]):
         self.central_widget.add_algo_config(algo_ids)

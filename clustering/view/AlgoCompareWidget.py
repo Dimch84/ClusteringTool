@@ -17,11 +17,11 @@ class NumericItem(QTableWidgetItem):
 
 
 class AlgoCompareWidget(QDialog, WidgetHelper):
-    def __init__(self, presenter: Presenter, dataset_ids: [uuid], algo_run_configs: [uuid], score_id: uuid):
+    def __init__(self, presenter: Presenter, dataset_ids: [uuid], algo_configs: [AlgoRunConfig], score_id: uuid):
         super().__init__()
         self.presenter = presenter
         self.dataset_ids = dataset_ids
-        self.algo_run_configs = algo_run_configs
+        self.algo_configs = algo_configs
         self.score_id = score_id
 
         layout = QVBoxLayout()
@@ -31,16 +31,14 @@ class AlgoCompareWidget(QDialog, WidgetHelper):
 
     def __generate_table(self, dataset_id: uuid):
         score_name = self.presenter.get_score_name(self.score_id)
-        table = QTableWidget(len(self.algo_run_configs), 2)
+        table = QTableWidget(len(self.algo_configs), 2)
         table.setHorizontalHeaderItem(0, QTableWidgetItem('Algorithm'))
         table.setHorizontalHeaderItem(1, QTableWidgetItem(f'Score ({score_name}):'))
-        for i, algo_config in enumerate(self.algo_run_configs):
+        for i, algo_config in enumerate(self.algo_configs):
             algo_run_id = self.presenter.launch_algo_run(
                 AlgoRunConfig(
-                    name=algo_config.name,
+                    algo_config=algo_config,
                     dataset_id=dataset_id,
-                    algorithm_id=algo_config.algo_id,
-                    params=algo_config.params,
                     score_ids=[self.score_id]
                 )
             )
@@ -53,14 +51,15 @@ class AlgoCompareWidget(QDialog, WidgetHelper):
             table.setItem(i, 1, item)
         table.sortItems(1, Qt.DescendingOrder)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.itemDoubleClicked.connect(lambda item, table=table: self.cell_clicked(table, item))
+        table.itemDoubleClicked.connect(self.__cell_clicked)
         return self.add_title_to_widget(self.presenter.get_dataset_name(dataset_id), table)
 
-    def cell_clicked(self, table, item):
+    def __cell_clicked(self, item):
         if item.column() == 0:
             algo_run_id = item.data(Qt.UserRole)
             if algo_run_id is not None:
                 dialog = QDialog()
                 dialog.setLayout(QVBoxLayout())
+                algo_run_results = self.presenter.get_algo_run_results(algo_run_id)
                 dialog.layout().addWidget(AlgoResultsTab(self.presenter, algo_run_id))
                 dialog.exec()

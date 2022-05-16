@@ -9,12 +9,17 @@ from clustering.model.Dataset import Dataset
 from clustering.model.Score import Score
 
 
+@dataclass
+class AlgoConfig:
+    name: str
+    algo_id: uuid
+    params: dict
+
+
 @dataclass()
 class AlgoRunConfig:
-    name: str
+    algo_config: AlgoConfig
     dataset_id: uuid
-    algorithm_id: uuid
-    params: dict
     score_ids: list[uuid]
 
 
@@ -40,10 +45,10 @@ class Model:
         self.algo_run_results: dict[uuid, AlgoRunResults] = {}
         self.compare_mode = compare_mode
 
-    def add_algo_run(self, config: AlgoRunConfig):
+    def add_algo_run(self, config: AlgoRunConfig) -> uuid:
         dataset = self.datasets[config.dataset_id]
-        algorithm = self.algorithms[config.algorithm_id]
-        pred = algorithm.run(dataset.data, config.params)
+        algorithm = self.algorithms[config.algo_config.algo_id]
+        pred = algorithm.run(dataset.data, config.algo_config.params)
         scores = self.calc_scores(pred, dataset, [self.scores[score_id] for score_id in config.score_ids])
         algo_run_result_id = uuid.uuid4()
         algo_run_result = AlgoRunResults(config, pred, scores, dataset)
@@ -84,14 +89,14 @@ class Model:
 
         for algo_run_id in self.algo_run_results.keys():
             algo_run = self.algo_run_results[algo_run_id]
-            algo_name = self.algorithms[algo_run.config.algorithm_id].name
+            algo_name = self.algorithms[algo_run.config.algo_config.algo_id].name
             dataset_name = self.datasets[algo_run.config.dataset_id].name
             if dataset_name not in data.keys():
                 data[dataset_name] = []
             data[dataset_name].append({
-                "run_name": algo_run.config.name,
+                "run_name": algo_run.config.algo_config.name,
                 "algo_name": algo_name,
-                "params": algo_run.config.params,
+                "params": algo_run.config.algo_config.params,
                 "scores": algo_run.scores,
                 "pred": algo_run.pred
             })
@@ -115,10 +120,12 @@ class Model:
                 algo_run_result_id = uuid.uuid4()
                 self.algo_run_results[algo_run_result_id] = AlgoRunResults(
                     config=AlgoRunConfig(
-                        name=algo_run["run_name"],
+                        AlgoConfig(
+                            name=algo_run["run_name"],
+                            algo_id=algorithms_dict[algo_run["algo_name"]],
+                            params=algo_run["params"]
+                        ),
                         dataset_id=datasets_dict[dataset_name],
-                        algorithm_id=algorithms_dict[algo_run["algo_name"]],
-                        params=algo_run["params"],
                         score_ids=list([scores_dict[score_name] for score_name in algo_run["scores"].keys()])
                     ),
                     pred=algo_run["pred"],
