@@ -11,8 +11,10 @@ from PyQt5.QtCore import Qt
 class NumericItem(QTableWidgetItem):
     def __lt__(self, other: QTableWidgetItem):
         lhs, rhs = self.data(Qt.UserRole), other.data(Qt.UserRole)
-        if (lhs is None) != (rhs is None):
-            return (lhs is None) > (rhs is None)
+        if rhs is None:
+            return False
+        if lhs is None:
+            return True
         return lhs < rhs
 
 
@@ -60,6 +62,5 @@ class AlgoCompareWidget(QDialog, WidgetHelper):
             if algo_run_id is not None:
                 dialog = QDialog()
                 dialog.setLayout(QVBoxLayout())
-                algo_run_results = self.presenter.get_algo_run_results(algo_run_id)
                 dialog.layout().addWidget(AlgoResultsTab(self.presenter, algo_run_id))
                 dialog.exec()
