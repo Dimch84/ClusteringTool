@@ -1,5 +1,4 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QDialogButtonBox, QLineEdit, \
-    QRadioButton
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QCheckBox, QGroupBox, QRadioButton
 from dataclasses import dataclass
 
 from clustering.view.WidgetHelper import WidgetHelper

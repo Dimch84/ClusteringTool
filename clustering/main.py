@@ -4,6 +4,7 @@ import sys
 from clustering.model.Algorithm import load_algorithms
 from clustering.model.Dataset import load_all_datasets
 from clustering.model.Model import Model
+from clustering.view.SelectModeDialog import SelectModeDialog
 from clustering.view.View import View
 from clustering.presenter.Presenter import Presenter
 from clustering.scores.default_scores import scores
@@ -25,10 +26,15 @@ model = Model(
     algorithms=load_algorithms(),
     scores=scores
 )
-model.load()
+if not model.load_from_file():
+    dialog = SelectModeDialog()
+    if dialog.exec():
+        model.reload(dialog.get_result())
+    else:
+        exit(0)
 presenter.set_model(model)
 
-view = View(presenter, True)
+view = View(presenter)
 presenter.set_view(view)
 
 view.load_from_model(presenter.model)

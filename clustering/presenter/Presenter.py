@@ -10,6 +10,7 @@ from clustering.model.Model import AlgoRunConfig, AlgoRunResults, AlgoConfig
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
+from clustering.view.SelectModeDialog import SelectModeDialog
 
 
 class DuplicatedAlgoNameError(Exception):
@@ -54,6 +55,9 @@ class Presenter:
     def get_score_ids(self):
         return self.model.scores.keys()
 
+    def update_algo_configs(self, algo_configs: [AlgoConfig]):
+        self.model.algo_configs = algo_configs
+
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
@@ -87,7 +91,7 @@ class Presenter:
             self.view.show_error(str("Invalid parameters"))
 
     def add_algo_config_pushed(self) -> uuid:
-        self.view.add_algo_config(self.model.algorithms.keys())
+        self.view.show_add_algo_config(self.model.algorithms.keys())
 
     def launch_algo_run(self, algo_run_config):
         try:
@@ -185,13 +189,17 @@ class Presenter:
             return
         self.model.save()
         self.model.algo_run_results.clear()
-        self.model.load(file)
+        self.model.load_from_file(file)
         self.view.load_from_model(self.model)
 
     def new_session_pushed(self):
         self.model.save()
-        self.model.algo_run_results.clear()
-        self.view.load_from_model(self.model)
+        dialog = SelectModeDialog()
+        if dialog.exec():
+            self.model.reload(dialog.get_result())
+            self.view.load_from_model(self.model)
+        else:
+            self.view.close()
 
     def export_algo_run_results(self, algo_run_id: uuid):
         file = self.view.show_save_file_dialog("Export results", "*.csv")

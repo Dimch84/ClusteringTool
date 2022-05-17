@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QPushButton, QGrid
     QHBoxLayout, QFrame, QListWidgetItem
 from PyQt5.QtCore import Qt
 
-from clustering.model.Model import Model, AlgoRunConfig
+from clustering.model.Model import Model, AlgoRunConfig, AppMode, AlgoConfig
 from clustering.view.AddAlgoRunDialog import AddAlgoRunDialog
 from clustering.view.AddDatasetDialog import AddDatasetDialog
 from clustering.view.AlgoCompareWidget import AlgoCompareWidget
@@ -69,6 +69,9 @@ class CentralWidget(QWidget):
 
     def remove_results_tab_listener(self, index: int, dataset_id: uuid):
         self.presenter.remove_algo_run_pushed(self.windows[dataset_id].algo_run_ids[index])
+
+    def add_algo_config(self, algo_config: AlgoConfig):
+        pass
 
     def add_results_tab(self, algo_run_id: uuid):
         algo_run_results = self.presenter.get_algo_run_results(algo_run_id)
@@ -137,6 +140,12 @@ class OtherCentralWidget(QWidget, WidgetHelper):
         widget.layout().addWidget(buttons)
         return widget
 
+    def __get_algo_configs(self):
+        algo_configs = []
+        for ind in range(self.algo_configs.count()):
+            algo_configs.append(self.algo_configs.item(ind).data(Qt.UserRole))
+        return algo_configs
+
     def __algo_config_clicked(self, item: QListWidgetItem):
         config = item.data(Qt.UserRole)
         add_algo_dialog = AddAlgoRunDialog(self, self.presenter, [config.algo_id], config)
@@ -144,10 +153,12 @@ class OtherCentralWidget(QWidget, WidgetHelper):
             result = add_algo_dialog.get_result()
             item.setData(Qt.UserRole, result)
             item.setText(result.name)
+        self.presenter.update_algo_configs(self.__get_algo_configs())
 
     def __remove_algo_config(self):
         for item in self.algo_configs.selectedItems():
             self.algo_configs.takeItem(self.algo_configs.row(item))
+        self.presenter.update_algo_configs(self.__get_algo_configs())
 
     def __create_score_selector(self):
         result = QComboBox()
@@ -167,13 +178,19 @@ class OtherCentralWidget(QWidget, WidgetHelper):
                                       self.included_datasets.add(id) if x else self.included_datasets.remove(id))
         self.dataset_selector.layout().addWidget(checkBox)
 
-    def add_algo_config(self, algo_ids: [uuid]):
+    def add_algo_config(self, config: AlgoConfig):
+        item = QListWidgetItem(config.name)
+        item.setData(Qt.UserRole, config)
+        self.algo_configs.addItem(item)
+
+    def show_add_algo_config(self, algo_ids: [uuid]):
         add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids)
         if add_algo_dialog.exec():
             result = add_algo_dialog.get_result()
             item = QListWidgetItem(result.name)
             item.setData(Qt.UserRole, result)
             self.algo_configs.addItem(item)
+        self.presenter.update_algo_configs(self.__get_algo_configs())
 
     def launch_all(self):
         algo_configs_list = []
@@ -190,14 +207,14 @@ class OtherCentralWidget(QWidget, WidgetHelper):
 
 
 class View(QMainWindow):
-    def __init__(self, presenter: Presenter, compare_mode: bool = False):
+    def __init__(self, presenter: Presenter):
         super().__init__()
         self.setWindowTitle("ClusteringTool")
         self.setGeometry(70, 100, 1600, 900)
         self.presenter = presenter
-        self.compare_mode = compare_mode
-        self.central_widget = OtherCentralWidget(presenter) if compare_mode else CentralWidget(presenter)
-        self.setCentralWidget(self.central_widget)
+        self.mode = self.central_widget = None
+        #self.central_widget = OtherCentralWidget(presenter) if mode == AppMode.CompareMode else CentralWidget(presenter)
+        #self.setCentralWidget(self.central_widget)
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('&File')
         file_menu.addAction(self.create_new_action('&Save session', 'Ctrl+S', presenter.save_session_pushed))
@@ -221,13 +238,17 @@ class View(QMainWindow):
         QMessageBox.information(self, "Info", msg)
 
     def load_from_model(self, model: Model):
-        self.central_widget.close()
-        self.central_widget = OtherCentralWidget(self.presenter) if self.compare_mode else CentralWidget(self.presenter)
+        if self.central_widget is not None:
+            self.central_widget.close()
+        self.mode = model.mode
+        self.central_widget = OtherCentralWidget(self.presenter) if self.mode == AppMode.CompareMode else CentralWidget(self.presenter)
         self.setCentralWidget(self.central_widget)
         for dataset_id in model.datasets.keys():
             self.add_dataset(dataset_id)
         for algo_run_result in model.algo_run_results:
             self.add_algo_run_results(algo_run_result)
+        for algo_config in model.algo_configs:
+            self.add_algo_config(algo_config)
 
     def add_dataset(self, dataset_id: uuid):
         self.central_widget.add_dataset(dataset_id)
@@ -261,8 +282,11 @@ class View(QMainWindow):
     def show_add_algo_run_dialog(self, algo_ids: [uuid]) -> AlgoRunConfig:
         return self.central_widget.show_add_algo_run_dialog(algo_ids)
 
-    def add_algo_config(self, algo_ids: [uuid]):
-        self.central_widget.add_algo_config(algo_ids)
+    def show_add_algo_config(self, algo_ids: [uuid]):
+        self.central_widget.show_add_algo_config(algo_ids)
+
+    def add_algo_config(self, algo_config: AlgoConfig):
+        self.central_widget.add_algo_config(algo_config)
 
     def create_new_action(self, name: str, shortcut: str, handler: Callable):
         action = QAction(name, self)
