@@ -31,8 +31,8 @@ class AlgoResultsTab(QWidget):
         self.feature_names = presenter.get_dataset_feature_names(algo_run_results.config.dataset_id)
         self.pred = algo_run_results.pred
         self.parameters_widget = AlgoParamsSetter(
-            params=presenter.get_algo_params(algo_run_results.config.algorithm_id),
-            values=algo_run_results.config.params
+            params=presenter.get_algo_params(algo_run_results.config.algo_config.algo_id),
+            values=algo_run_results.config.algo_config.params
         )
         self.scores_widget = ScoresWidget(algo_run_results.scores)
         self.clustering_view = ClusteringView(self.points, self.pred, self.presenter, algo_run_results.config.dataset_id)

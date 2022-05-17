@@ -6,6 +6,7 @@ from clustering.model.Algorithm import AlgoParams
 from clustering.view.CheckBoxParamEditor import CheckBoxParamEditor
 from clustering.view.LineParamEditor import LineParamEditor
 from clustering.view.SelectableParamEditor import SelectableParamEditor
+from clustering.view.WidgetHelper import WidgetHelper
 
 
 def add_title_to_widget(title: str, widget: QWidget):
