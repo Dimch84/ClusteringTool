@@ -1,22 +1,23 @@
 import uuid
 
 from PyQt5.QtWidgets import QWidget, QGridLayout, QFormLayout, QLabel, QGroupBox, QVBoxLayout, QPushButton, QDialog, \
-    QTableWidget, QTableWidgetItem
+    QTableWidget, QTableWidgetItem, QScrollArea
 
 from clustering.view.AlgoResultsTab.ClusteringView import ClusteringView
 from clustering.presenter.Presenter import Presenter
-from clustering.view.AlgoParamsSetter import AlgoParamsSetter, ParamsSetterAttr
+from clustering.view.AlgoParamsSetter import AlgoParamsSetter
 
 
-class ScoresWidget(QWidget):
+class ScoresWidget(QScrollArea):
     def __init__(self, scores: dict):
         super().__init__()
-        self.setMinimumSize(400, 300)
-        layout = QFormLayout(self)
+        widget = QWidget()
+        layout = QFormLayout(widget)
         layout.setVerticalSpacing(20)
         layout.setHorizontalSpacing(50)
         for score_name in scores.keys():
             layout.addRow(QLabel(f"{score_name}: "), QLabel(str(scores[score_name])))
+        self.setWidget(widget)
 
 
 class AlgoResultsTab(QWidget):
@@ -29,10 +30,10 @@ class AlgoResultsTab(QWidget):
         self.points = presenter.get_dataset_points(algo_run_results.config.dataset_id)
         self.feature_names = presenter.get_dataset_feature_names(algo_run_results.config.dataset_id)
         self.pred = algo_run_results.pred
-        self.parameters_widget = AlgoParamsSetter(ParamsSetterAttr(
+        self.parameters_widget = AlgoParamsSetter(
             params=presenter.get_algo_params(algo_run_results.config.algorithm_id),
             values=algo_run_results.config.params
-        ))
+        )
         self.scores_widget = ScoresWidget(algo_run_results.scores)
         self.clustering_view = ClusteringView(self.points, self.pred, self.presenter, algo_run_results.config.dataset_id)
         self.show_in_analytic_mode_button = QPushButton("Show table")

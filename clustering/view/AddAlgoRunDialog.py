@@ -3,12 +3,12 @@ from functools import partial
 from dataclasses import dataclass
 
 from PyQt5.QtWidgets import QDialog, QComboBox, QFormLayout, QWidget, QVBoxLayout, \
-    QCheckBox, QSizePolicy, QLineEdit
+    QCheckBox, QSizePolicy, QLineEdit, QScrollArea
 
 from clustering.model.Algorithm import AlgoParams
 from clustering.view.DialogHelper import DialogHelper
 from clustering.presenter.Presenter import Presenter
-from clustering.view.AlgoParamsSetter import AlgoParamsSetter, ParamsSetterAttr
+from clustering.view.AlgoParamsSetter import AlgoParamsSetter
 
 
 class AlgoSelector(QComboBox):
@@ -19,18 +19,18 @@ class AlgoSelector(QComboBox):
             self.addItem(algo_name, algo_id)
 
 
-class ScoresSelector(QWidget):
+class ScoresSelector(QScrollArea):
     def __init__(self, presenter: Presenter, score_ids: [uuid]):
         super().__init__()
         self.selected_scores: list[uuid] = []
-
-        layout = QVBoxLayout()
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         for score_id in score_ids:
             score_name = presenter.get_score_name(score_id)
             checkBox = QCheckBox(score_name)
             checkBox.stateChanged.connect(partial(self.change_score_state, score_id=score_id))
             layout.addWidget(checkBox)
-        self.setLayout(layout)
+        self.setWidget(widget)
 
     def change_score_state(self, checked: bool, score_id: uuid):
         if checked:
@@ -55,7 +55,7 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
         super().__init__(parent)
         self.setWindowTitle("Algorithm settings")
         self.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
-        self.setMinimumSize(600, 0)
+        self.setMinimumWidth(600)
 
         self.presenter = presenter
         self.name_input = QLineEdit("")
@@ -65,7 +65,7 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
         self.algo_params_titled_setter = self.add_title_to_widget("Parameters", self.algo_params_setter)
         self.scores_selector = ScoresSelector(presenter, score_ids)
 
-        self.layout = QFormLayout()
+        self.layout = QVBoxLayout()
         self.layout.addWidget(self.add_title_to_widget("Name", self.name_input))
         self.layout.addWidget(self.add_title_to_widget("Algorithm", self.algo_selector))
         self.layout.addWidget(self.algo_params_titled_setter)
@@ -88,11 +88,7 @@ class AddAlgoRunDialog(QDialog, DialogHelper):
 
     def __create_param_setter(self, algo_id: uuid):
         params: AlgoParams = self.presenter.get_algo_params(algo_id)
-        return AlgoParamsSetter(ParamsSetterAttr(
-            params=params,
-            values={p.name: "0" for p in params.int_params} |
-                   {p.name: p.items[0] for p in params.selectable_params},
-        ))
+        return AlgoParamsSetter(params, {})
 
     def get_result(self):
         return AddAlgoDialogResult(

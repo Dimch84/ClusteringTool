@@ -9,7 +9,7 @@ from clustering.view.DialogHelper import DialogHelper
 class AddDatasetDialogResults:
     name: str
     included_cols: list[str]
-    title_col: str | None
+    title_col: str
     normalise: bool
 
 
@@ -26,7 +26,7 @@ class AddDatasetDialog(QDialog, DialogHelper):
         self.setWindowTitle("Dataset editor")
         self.setMinimumSize(600, 300)
 
-        self.layout = QFormLayout()
+        self.layout = QVBoxLayout()
         self.layout.addWidget(self.__create_dataset_name_input())
         self.layout.addWidget(self.__create_title_selector())
         self.layout.addWidget(self.__create_cols_selector())

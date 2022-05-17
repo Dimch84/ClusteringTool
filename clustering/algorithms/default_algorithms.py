@@ -1,34 +1,50 @@
-import sklearn.cluster as algos
-from clustering.model.Algorithm import Algorithm
+import sklearn.cluster as sk
 
+from clustering.model.Algorithm import Algorithm
 from clustering.model.Algorithm import AlgoParams
-from clustering.model.Algorithm import IntParam
 from clustering.model.Algorithm import SelectableParam
 
-kmeans = Algorithm(name="K-means",
+k_means = Algorithm(name="K-means",
+                    params=AlgoParams(
+                        bool_params=[],
+                        float_params=["tol"],
+                        int_params=["n_clusters", "n_init", "max_iter", "verbose"],
+                        selectable_params=[SelectableParam(name="algorithm",
+                                                           items=["elkan", "auto", "full"])]
+                    ),
+                    run=lambda data, params:
+                    sk.KMeans(**params)
+                    .fit(data).labels_)
+
+agglomerative = Algorithm(name="Agglomerative clustering",
+                          params=AlgoParams(
+                              bool_params=["compute_full_tree"],
+                              float_params=["distance_threshold"],
+                              int_params=["n_clusters"],
+                              selectable_params=[
+                                  SelectableParam(name="affinity",
+                                                  items=["euclidean", "l1", "l2", "manhattan", "cosine"]),
+                                  SelectableParam(name="linkage",
+                                                  items=["ward", "complete", "average", "single"])
+                              ]
+                          ),
+                          run=lambda data, params:
+                          sk.AgglomerativeClustering(**params)
+                          .fit(data).labels_)
+
+dbscan = Algorithm(name="DBSCAN",
                    params=AlgoParams(
-                       int_params=[IntParam(name="k", min_bound=2, max_bound=20)],
-                       selectable_params=[]
+                       bool_params=[],
+                       float_params=["eps", "p"],
+                       int_params=["min_samples", "leaf_size", "n_jobs"],
+                       selectable_params=[
+                           SelectableParam(name="metric",
+                                           items=["euclidean", "l1", "l2", "manhattan", "cosine"]),
+                           SelectableParam(name="algorithm",
+                                           items=["auto", "ball_tree", "kd_tree", "brute"])]
                    ),
                    run=lambda data, params:
-                   algos.KMeans(
-                       n_clusters=params["k"])
+                   sk.DBSCAN(**params)
                    .fit(data).labels_)
 
-agglo = Algorithm(name="Agglomerative clustering",
-                  params=AlgoParams(
-                      int_params=[IntParam(name="k", min_bound=2, max_bound=20)],
-                      selectable_params=[
-                          SelectableParam(name="affinity", items=["euclidean", "l1", "l2", "manhattan", "cosine"]),
-                          SelectableParam(name="linkage", items=["ward", "complete", "average", "single"])
-                      ]
-                  ),
-                  run=lambda data, params:
-                    algos.AgglomerativeClustering(
-                        n_clusters=params["k"],
-                        affinity=params["affinity"],
-                        linkage=params["linkage"])
-                  .fit(data).labels_)
-
-# TODO: add other algorithms from sklearn
-algorithms = [kmeans, agglo]
+algorithms = [k_means, agglomerative, dbscan]

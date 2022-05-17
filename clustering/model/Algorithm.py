@@ -6,13 +6,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class IntParam:
-    name: str
-    min_bound: int
-    max_bound: int
-
-
-@dataclass
 class SelectableParam:
     name: str
     items: [str]
@@ -20,7 +13,9 @@ class SelectableParam:
 
 @dataclass
 class AlgoParams:
-    int_params: [IntParam]
+    bool_params: [bool]
+    float_params: [float]
+    int_params: [str]
     selectable_params: [SelectableParam]
 
 
