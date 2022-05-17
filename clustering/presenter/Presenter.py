@@ -6,10 +6,11 @@ import pandas
 from copy import copy
 
 from clustering.model.Dataset import get_cols_with_type, get_feature_cols
-from clustering.model.Model import AlgoRunConfig, AlgoRunResults
+from clustering.model.Model import AlgoRunConfig, AlgoRunResults, AlgoConfig
 from clustering.model.Dataset import DuplicatedDatasetNameError, add_dataset, generate_random_dataset
 from clustering.model.Algorithm import load_algorithms, load_algorithms_from_module
 from clustering.model.Dataset import load_from_csv, normalise_dataset, Dataset
+from clustering.view.SelectModeDialog import SelectModeDialog
 
 
 class DuplicatedAlgoNameError(Exception):
@@ -48,18 +49,25 @@ class Presenter:
     def get_score_name(self, score_id: uuid):
         return self.model.scores[score_id].name
 
-    def get_algo_run_results(self, algo_run_id: uuid):
+    def get_algo_run_results(self, algo_run_id: uuid) -> AlgoRunResults:
         return self.model.algo_run_results[algo_run_id]
+
+    def get_score_ids(self):
+        return self.model.scores.keys()
+
+    def update_algo_configs(self, algo_configs: [AlgoConfig]):
+        self.model.algo_configs = algo_configs
 
     def rerun_algo_pushed(self, algo_run_id: uuid, params: dict):
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
-            next_algo_run_id = self.model.add_algo_run(
-                name=prev_results.name,
-                config=AlgoRunConfig(
+            next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
+                    algo_config=AlgoConfig(
+                        name=prev_results.config.algo_config.name,
+                        algo_id=prev_results.config.algo_config.algo_id,
+                        params=params
+                    ),
                     dataset_id=prev_results.config.dataset_id,
-                    algorithm_id=prev_results.config.algorithm_id,
-                    params=params,
                     score_ids=prev_results.config.score_ids
                 )
             )
@@ -71,19 +79,25 @@ class Presenter:
             self.view.show_error(str("Invalid parameters"))
 
     def add_algo_run_pushed(self):
-        result = self.view.show_add_algo_run_dialog(
-            algo_ids=self.model.algorithms.keys(),
-            score_ids=self.model.scores.keys()
-        )
-        if result is None:
+        algo_run_config = self.view.show_add_algo_run_dialog(algo_ids=self.model.algorithms.keys())
+        if algo_run_config is None:
             return
         try:
-            algo_run_id = self.model.add_algo_run(result.name, result.config)
+            algo_run_id = self.model.add_algo_run(algo_run_config)
             self.view.add_algo_run_results(algo_run_id)
         except KeyError:
             self.view.show_error(str("Some parameters weren't configured"))
         except (ValueError, TypeError, OverflowError):
             self.view.show_error(str("Invalid parameters"))
+
+    def add_algo_config_pushed(self) -> uuid:
+        self.view.show_add_algo_config(self.model.algorithms.keys())
+
+    def launch_algo_run(self, algo_run_config):
+        try:
+            return self.model.add_algo_run(algo_run_config)
+        except:
+            return None
 
     def remove_algo_run_pushed(self, algorithm_id: uuid):
         if self.model.remove_algo_run_results(algorithm_id):
@@ -175,13 +189,17 @@ class Presenter:
             return
         self.model.save()
         self.model.algo_run_results.clear()
-        self.model.load(file)
+        self.model.load_from_file(file)
         self.view.load_from_model(self.model)
 
     def new_session_pushed(self):
         self.model.save()
-        self.model.algo_run_results.clear()
-        self.view.load_from_model(self.model)
+        dialog = SelectModeDialog()
+        if dialog.exec():
+            self.model.reload(dialog.get_result())
+            self.view.load_from_model(self.model)
+        else:
+            self.view.close()
 
     def export_algo_run_results(self, algo_run_id: uuid):
         file = self.view.show_save_file_dialog("Export results", "*.csv")

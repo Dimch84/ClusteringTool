@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QDialog, QFormLayout, QWidget
 from dataclasses import dataclass
 
-from clustering.view.DialogHelper import DialogHelper, PositiveIntValidator, NonNegativeDoubleValidator
+from clustering.view.WidgetHelper import WidgetHelper, PositiveIntValidator, NonNegativeDoubleValidator
 
 
 @dataclass
@@ -13,7 +13,7 @@ class GenerateDatasetDialogResults:
     cluster_std: float = 0.2
 
 
-class GenerateDatasetDialog(QDialog, DialogHelper):
+class GenerateDatasetDialog(QDialog, WidgetHelper):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
         self.result = GenerateDatasetDialogResults()

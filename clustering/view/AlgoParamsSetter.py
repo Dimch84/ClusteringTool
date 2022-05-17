@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QComboBox, QWidget, QVBoxLayout
 
 from clustering.model.Algorithm import AlgoParams
-from clustering.view.DialogHelper import DialogHelper
+from clustering.view.WidgetHelper import WidgetHelper
 
 
 @dataclass
@@ -15,7 +15,7 @@ class ParamsSetterAttr:
     values: dict
 
 
-class AlgoParamsSetter(QWidget, DialogHelper):
+class AlgoParamsSetter(QWidget, WidgetHelper):
     def __init__(self, attr: ParamsSetterAttr):
         super().__init__()
         self.params: dict = copy(attr.values)
