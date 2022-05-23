@@ -47,4 +47,27 @@ dbscan = Algorithm(name="DBSCAN",
                    sk.DBSCAN(**params)
                    .fit(data).labels_)
 
-algorithms = [k_means, agglomerative, dbscan]
+birch = Algorithm(name="BIRCH",
+                  params=AlgoParams(
+                       bool_params=[],
+                       float_params=["threshold"],
+                       int_params=["n_clusters", "branching_factor"],
+                       selectable_params=[]
+                  ),
+                   run=lambda data, params:
+                   sk.Birch(**params)
+                   .fit(data).labels_)
+
+affinity = Algorithm(name="Affinity propagation",
+                  params=AlgoParams(
+                       bool_params=[],
+                       float_params=["damping"],
+                       int_params=["max_iter", "convergence_iter", "random_state"],
+                       selectable_params=[SelectableParam(name="affinity",
+                                                         items=["euclidean", "precomputed"]) ]
+                   ),
+                   run=lambda data, params:
+                   sk.AffinityPropagation(**params)
+                   .fit(data).labels_)
+
+algorithms = [k_means, agglomerative, dbscan, birch, affinity]

@@ -16,6 +16,9 @@ class Score:
     def calc_score(self, data: np.ndarray = None, target: np.ndarray = None, pred: np.ndarray = None):
         if pred is None or (self.needs_target and target is None) or (not self.needs_target and data is None):
             return None
-        if self.needs_target:
-            return self.score_fun(target, pred)
-        return self.score_fun(data, pred)
+        try:
+            if self.needs_target:
+                return self.score_fun(target, pred)
+            return self.score_fun(data, pred)
+        except Exception:
+            return None

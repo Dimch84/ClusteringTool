@@ -7,3 +7,4 @@ clustering/scores/__pycache__
 clustering/view/__pycache__
 clustering/view/AlgoResultsTab/__pycache__
 .idea/
+*.ini
