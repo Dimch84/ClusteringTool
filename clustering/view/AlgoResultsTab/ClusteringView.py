@@ -1,3 +1,4 @@
+import cmapy
 import random
 import uuid
 
@@ -79,7 +80,7 @@ class ClusteringView(QWidget):
         self.graphicView = ScalableGraphicsView(scene, self)
         self.setMinimumSize(800, 600)
         self.graphicView.setMinimumSize(800, 600)
-        self.colors = dict((x, QColor(random.randint(1, 1000000000))) for x in list(set(pred)))
+        self.colors = {x: QColor(*cmapy.color('hsv', random.randrange(0, 256), rgb_order=True)) for x in set(pred)}
 
         self.graphicView.setScene(self.get_scene_with_points())
 

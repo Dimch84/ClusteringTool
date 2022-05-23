@@ -27,8 +27,9 @@ class AlgoResultsTab(QWidget):
         self.algo_run_id = algo_run_id
 
         algo_run_results = presenter.get_algo_run_results(algo_run_id)
-        self.points = presenter.get_dataset_points(algo_run_results.config.dataset_id)
-        self.feature_names = presenter.get_dataset_feature_names(algo_run_results.config.dataset_id)
+        self.dataset_id = algo_run_results.config.dataset_id
+        self.points = presenter.get_dataset_points(self.dataset_id)
+        self.feature_names = presenter.get_dataset_feature_names(self.dataset_id)
         self.pred = algo_run_results.pred
         self.parameters_widget = AlgoParamsSetter(
             params=presenter.get_algo_params(algo_run_results.config.algo_config.algo_id),
@@ -62,14 +63,17 @@ class AlgoResultsTab(QWidget):
         dialog.setWindowTitle("Results")
         dialog.setMinimumSize(800, 700)
         layout = QVBoxLayout()
-        table = QTableWidget(len(self.points), len(self.feature_names) + 1)
+        table = QTableWidget(len(self.points), len(self.feature_names) + 2)
+        table.setHorizontalHeaderItem(0, QTableWidgetItem("Name"))
         for i, title in enumerate(self.feature_names):
-            table.setHorizontalHeaderItem(i, QTableWidgetItem(title))
-        table.setHorizontalHeaderItem(len(self.feature_names), QTableWidgetItem("Cluster"))
+            table.setHorizontalHeaderItem(i + 1, QTableWidgetItem(title))
+        table.setHorizontalHeaderItem(len(self.feature_names) + 1, QTableWidgetItem("Cluster"))
         for i, point in enumerate(self.points):
+            info = self.presenter.get_dataset_titles(self.dataset_id)[i]
+            table.setItem(i, 0, QTableWidgetItem(info))
             for j, val in enumerate(point):
-                table.setItem(i, j, QTableWidgetItem("{:.4f}".format(val)))
-            table.setItem(i, len(point), QTableWidgetItem(str(self.pred[i])))
+                table.setItem(i, j + 1, QTableWidgetItem("{:.4f}".format(val)))
+            table.setItem(i, len(point) + 1, QTableWidgetItem(str(self.pred[i])))
         export_button = QPushButton("Export to csv")
         export_button.clicked.connect(self.export_results_button_listener)
         layout.addWidget(table)

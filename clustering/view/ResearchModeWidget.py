@@ -1,4 +1,5 @@
 import uuid
+from typing import Union
 from functools import partial
 
 from PyQt5.QtWidgets import QWidget, QComboBox, QStackedWidget, QPushButton, QGridLayout, QTabWidget
@@ -34,7 +35,7 @@ class ResearchModeWidget(QWidget):
         layout.addWidget(self.stacked_widget, 2, 0, 2, 10)
         self.setLayout(layout)
 
-    def show_add_algo_run_dialog(self, algo_ids: [uuid]) -> AlgoRunConfig | None:
+    def show_add_algo_run_dialog(self, algo_ids: [uuid]) -> Union[AlgoRunConfig, None]:
         add_algo_dialog = AddAlgoRunDialog(self, self.presenter, algo_ids)
         if add_algo_dialog.exec():
             algo_config = add_algo_dialog.get_result()
