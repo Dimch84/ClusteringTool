@@ -126,7 +126,6 @@ class Presenter:
         try:
             add_dataset(dataset)
             dataset_id = self.model.add_dataset(dataset)
-            self.model.add_dataset(dataset)
             self.view.add_dataset(dataset_id)
         except DuplicatedDatasetNameError:
             self.view.show_error("Dataset with this name already exists; please, try again with another name")
