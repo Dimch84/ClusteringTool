@@ -62,15 +62,14 @@ class Presenter:
         try:
             prev_results: AlgoRunResults = self.get_algo_run_results(algo_run_id)
             next_algo_run_id = self.model.add_algo_run(AlgoRunConfig(
-                    algo_config=AlgoConfig(
-                        name=prev_results.config.algo_config.name,
-                        algo_id=prev_results.config.algo_config.algo_id,
-                        params=params
-                    ),
-                    dataset_id=prev_results.config.dataset_id,
-                    score_ids=prev_results.config.score_ids
-                )
-            )
+                algo_config=AlgoConfig(
+                    name=prev_results.config.algo_config.name,
+                    algo_id=prev_results.config.algo_config.algo_id,
+                    params=params
+                ),
+                dataset_id=prev_results.config.dataset_id,
+                score_ids=prev_results.config.score_ids
+            ))
             self.model.remove_algo_run_results(algo_run_id)
             self.view.change_algo_run_results(algo_run_id, next_algo_run_id)
         except (KeyError, ValueError, TypeError, OverflowError) as err:
@@ -138,7 +137,8 @@ class Presenter:
             return
 
         df = load_from_csv(file)
-        result = self.view.show_add_dataset_dialog(get_feature_cols(df).columns.tolist(), get_cols_with_type(df, ['object']).columns.tolist())
+        result = self.view.show_add_dataset_dialog(get_feature_cols(df).columns.tolist(),
+                                                   get_cols_with_type(df, ['object']).columns.tolist())
         if result is None:
             return
 
@@ -203,8 +203,11 @@ class Presenter:
             return
         results = self.get_algo_run_results(algo_run_id)
         dataset = self.model.datasets[results.config.dataset_id]
-        data = np.append(dataset.data, np.array(results.pred)[np.newaxis].T, 1)
-        col_names = copy(dataset.feature_names) + ["Cluster"]
+
+        #print(np.shape(dataset.data)[1])
+        data = np.append(np.array(dataset.titles)[np.newaxis].T, dataset.data, 1)
+        data = np.append(data, np.array(results.pred)[np.newaxis].T, 1)
+        col_names = ["Name"] + copy(dataset.feature_names) + ["Cluster"]
         df = pandas.DataFrame(data=data, columns=col_names)
         df.to_csv(file, index=False)
 
